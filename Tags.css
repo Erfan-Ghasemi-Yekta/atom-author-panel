@@ -1,0 +1,19 @@
+/* Tags page styles */
+.tools-bar{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content: space-between;
+  padding: 14px;
+  border-bottom:1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.tools-bar .input{
+  width: 280px;
+  max-width: 100%;
+}
+
+@media (max-width: 760px){
+  .tools-bar .input{ width:100%; }
+}

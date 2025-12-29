@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tags | پنل نویسنده</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="Tags.css" />
+</head>
+<body>
+
+  <div class="toasts" id="toasts"></div>
+
+  <header class="topbar">
+    <div class="topbar__inner">
+      <div class="brand">
+        <span class="brand__dot"></span>
+        <div class="brand__title">پنل نویسنده</div>
+      </div>
+
+      <nav class="nav" aria-label="navigation">
+        <a href="index.html" data-nav="dashboard">داشبورد</a>
+        <a href="posts.html" data-nav="posts">Posts</a>
+        <a href="Categories.html" data-nav="categories">Categories</a>
+        <a href="Tags.html" data-nav="tags">Tags</a>
+        <a href="Author profiles.html" data-nav="authors">Author profiles</a>
+      </nav>
+
+      <div class="topbar__right">
+        <div class="user-chip">
+          <span>کاربر:</span>
+          <b id="currentUser">—</b>
+        </div>
+        <button class="btn danger" id="logoutBtn" type="button">خروج</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-header">
+      <div>
+        <h1>Tags</h1>
+        <p>مدیریت تگ‌ها (CRUD) از طریق API: <span class="mono">/api/blog/tags/</span></p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="newTagBtn" type="button">تگ جدید</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tools-bar">
+        <input class="input" id="tagSearch" placeholder="جستجو بر اساس name یا slug..." />
+        <div class="row">
+          <button class="btn ghost" id="refreshBtn" type="button">رفرش</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:12%;">ID</th>
+              <th style="width:44%;">Name</th>
+              <th style="width:34%;">Slug</th>
+              <th style="width:10%;">عملیات</th>
+            </tr>
+          </thead>
+          <tbody id="tagsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== Tag Modal ===== -->
+  <div class="modal hidden" id="tagModal" aria-hidden="true">
+    <div class="modal__backdrop" data-close="tag"></div>
+    <div class="modal__panel" style="width:min(720px, 100%);">
+      <div class="modal__header">
+        <h2 id="tagModalTitle">تگ جدید</h2>
+        <button class="modal__close" type="button" aria-label="close" data-close="tag">×</button>
+      </div>
+
+      <div class="modal__body">
+        <form id="tagForm" class="form-grid">
+          <input type="hidden" id="tagMode" value="create" />
+          <input type="hidden" id="tagIdHidden" value="" />
+
+          <div class="field col-6">
+            <label for="tagName">نام (name)</label>
+            <input class="input" id="tagName" required maxlength="255" />
+          </div>
+
+          <div class="field col-6">
+            <label for="tagSlug">اسلاگ (slug)</label>
+            <input class="input mono" id="tagSlug" required maxlength="50" placeholder="update_2025" />
+            <div class="hint">Pattern: <span class="mono">^[-a-zA-Z0-9_]+$</span></div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal__footer">
+        <button class="btn ghost" type="button" data-close="tag">انصراف</button>
+        <button class="btn primary" id="saveTagBtn" type="button">ذخیره</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script src="Tags.js"></script>
+</body>
+</html>

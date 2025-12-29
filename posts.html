@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Posts | پنل نویسنده</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="posts.css" />
+</head>
+<body>
+
+  <div class="toasts" id="toasts"></div>
+
+  <header class="topbar">
+    <div class="topbar__inner">
+      <div class="brand">
+        <span class="brand__dot"></span>
+        <div class="brand__title">پنل نویسنده</div>
+      </div>
+
+      <nav class="nav" aria-label="navigation">
+        <a href="index.html" data-nav="dashboard">داشبورد</a>
+        <a href="posts.html" data-nav="posts">Posts</a>
+        <a href="Categories.html" data-nav="categories">Categories</a>
+        <a href="Tags.html" data-nav="tags">Tags</a>
+        <a href="Author profiles.html" data-nav="authors">Author profiles</a>
+      </nav>
+
+      <div class="topbar__right">
+        <div class="user-chip">
+          <span>کاربر:</span>
+          <b id="currentUser">—</b>
+        </div>
+        <button class="btn danger" id="logoutBtn" type="button">خروج</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-header">
+      <div>
+        <h1>Posts</h1>
+        <p>ایجاد، ویرایش، حذف و انتشار پست‌ها از طریق API های سایت.</p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="newPostBtn" type="button">پست جدید</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="filters">
+        <input class="input" id="searchInput" placeholder="جستجو در عنوان/خلاصه..." />
+
+        <select id="categoryFilter">
+          <option value="">همه دسته‌بندی‌ها</option>
+        </select>
+
+        <select id="statusFilter">
+          <option value="">همه وضعیت‌ها</option>
+          <option value="draft">Draft</option>
+          <option value="review">Review</option>
+          <option value="scheduled">Scheduled</option>
+          <option value="published">Published</option>
+          <option value="archived">Archived</option>
+        </select>
+
+        <select id="visibilityFilter">
+          <option value="">همه دسترسی‌ها</option>
+          <option value="public">Public</option>
+          <option value="private">Private</option>
+          <option value="unlisted">Unlisted</option>
+        </select>
+
+        <select id="pageSize">
+          <option value="10">10 / صفحه</option>
+          <option value="20">20 / صفحه</option>
+          <option value="50">50 / صفحه</option>
+        </select>
+
+        <button class="btn secondary" id="applyFiltersBtn" type="button">اعمال</button>
+        <button class="btn ghost" id="clearFiltersBtn" type="button">پاک کردن</button>
+
+        <span class="spacer"></span>
+
+        <button class="btn ghost" id="refreshBtn" type="button">رفرش</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 28%;">عنوان</th>
+              <th style="width: 12%;">وضعیت</th>
+              <th style="width: 12%;">دسترسی</th>
+              <th style="width: 16%;">دسته‌بندی</th>
+              <th style="width: 12%;">تگ‌ها</th>
+              <th style="width: 12%;">انتشار</th>
+              <th style="width: 8%;">عملیات</th>
+            </tr>
+          </thead>
+          <tbody id="postsTbody">
+            <!-- rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <button class="btn ghost" id="prevPageBtn" type="button">قبلی</button>
+        <div class="page-info" id="pageInfo">—</div>
+        <button class="btn ghost" id="nextPageBtn" type="button">بعدی</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== Post Modal ===== -->
+  <div class="modal hidden" id="postModal" aria-hidden="true">
+    <div class="modal__backdrop" data-close="1"></div>
+    <div class="modal__panel">
+      <div class="modal__header">
+        <h2 id="postModalTitle">پست جدید</h2>
+        <button class="modal__close" type="button" aria-label="close" data-close="1">×</button>
+      </div>
+
+      <div class="modal__body">
+        <form id="postForm" class="form-grid">
+          <input type="hidden" id="formMode" value="create" />
+          <input type="hidden" id="originalSlug" value="" />
+
+          <div class="field col-8">
+            <label for="title">عنوان (title)</label>
+            <input class="input" id="title" required maxlength="255" />
+          </div>
+
+          <div class="field col-4">
+            <label for="slug">اسلاگ (slug)</label>
+            <input class="input mono" id="slug" maxlength="50" placeholder="example_post_1" />
+            <div class="hint">برای تگ‌ها و پست‌ها اسلاگ بهتر است انگلیسی باشد.</div>
+          </div>
+
+          <div class="field col-4">
+            <label for="status">وضعیت (status)</label>
+            <select id="status" required>
+              <option value="draft">draft</option>
+              <option value="review">review</option>
+              <option value="scheduled">scheduled</option>
+              <option value="published">published</option>
+              <option value="archived">archived</option>
+            </select>
+          </div>
+
+          <div class="field col-4">
+            <label for="visibility">دسترسی (visibility)</label>
+            <select id="visibility" required>
+              <option value="public">public</option>
+              <option value="private">private</option>
+              <option value="unlisted">unlisted</option>
+            </select>
+          </div>
+
+          <div class="field col-4">
+            <label for="categoryId">دسته‌بندی (category_id)</label>
+            <select id="categoryId" required>
+              <option value="">— انتخاب کنید —</option>
+            </select>
+          </div>
+
+          <div class="field col-6">
+            <label for="tagIds">تگ‌ها (tag_ids)</label>
+            <select id="tagIds" multiple size="6"></select>
+            <div class="hint">با نگه‌داشتن Ctrl/⌘ می‌توانید چند مورد انتخاب کنید.</div>
+          </div>
+
+          <div class="field col-6">
+            <label for="excerpt">خلاصه (excerpt)</label>
+            <textarea id="excerpt" required></textarea>
+          </div>
+
+          <div class="field col-12">
+            <label for="content">محتوا (content)</label>
+            <textarea id="content" required style="min-height: 210px;"></textarea>
+          </div>
+
+          <div class="field col-4">
+            <label for="isHot">پست ویژه؟ (is_hot)</label>
+            <div class="row">
+              <input type="checkbox" id="isHot" />
+              <span class="small-muted">اگر فعال باشد، پست به عنوان Hot شناخته می‌شود.</span>
+            </div>
+          </div>
+
+          <div class="field col-4">
+            <label for="series">سری (series)</label>
+            <input class="input mono" id="series" type="number" min="0" placeholder="اختیاری" />
+          </div>
+
+          <div class="field col-4">
+            <label for="canonicalUrl">لینک Canonical (canonical_url)</label>
+            <input class="input mono" id="canonicalUrl" type="url" placeholder="https://example.com/post" />
+          </div>
+
+          <div class="field col-6">
+            <label for="seoTitle">SEO Title (seo_title)</label>
+            <input class="input" id="seoTitle" maxlength="255" placeholder="اختیاری" />
+          </div>
+
+          <div class="field col-6">
+            <label for="seoDescription">SEO Description (seo_description)</label>
+            <textarea id="seoDescription" placeholder="اختیاری"></textarea>
+          </div>
+
+          <div class="field col-6">
+            <label for="coverMediaId">Cover Media ID (cover_media_id)</label>
+            <div class="row">
+              <input class="input mono" id="coverMediaId" type="number" min="0" placeholder="مثال: 12" />
+              <button class="btn ghost small" id="pickCoverBtn" type="button">انتخاب از رسانه‌ها</button>
+            </div>
+          </div>
+
+          <div class="field col-6">
+            <label for="ogImageId">OG Image ID (og_image_id)</label>
+            <div class="row">
+              <input class="input mono" id="ogImageId" type="number" min="0" placeholder="مثال: 34" />
+              <button class="btn ghost small" id="pickOgBtn" type="button">انتخاب از رسانه‌ها</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal__footer">
+        <button class="btn ghost" type="button" data-close="1">انصراف</button>
+        <button class="btn primary" id="savePostBtn" type="button">ذخیره</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Media Picker Modal ===== -->
+  <div class="modal hidden" id="mediaModal" aria-hidden="true">
+    <div class="modal__backdrop" data-close="media"></div>
+    <div class="modal__panel" style="width:min(980px, 100%);">
+      <div class="modal__header">
+        <h2>رسانه‌ها (Media)</h2>
+        <button class="modal__close" type="button" aria-label="close" data-close="media">×</button>
+      </div>
+
+      <div class="modal__body">
+        <div class="row" style="justify-content: space-between; margin-bottom: 10px;">
+          <div class="small-muted">روی یک آیتم کلیک کنید تا ID آن در فیلد قرار بگیرد.</div>
+          <div class="row">
+            <button class="btn ghost small" id="mediaPrevBtn" type="button">قبلی</button>
+            <button class="btn ghost small" id="mediaNextBtn" type="button">بعدی</button>
+          </div>
+        </div>
+
+        <div id="mediaGrid" class="form-grid"></div>
+      </div>
+
+      <div class="modal__footer">
+        <button class="btn ghost" type="button" data-close="media">بستن</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script src="posts.js"></script>
+</body>
+</html>
