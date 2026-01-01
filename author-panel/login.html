@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ورود نویسنده | Atom</title>
+
+  <!-- Optional Persian-friendly font (can be removed if you host your own) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/author-login.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="card" aria-label="فرم ورود">
+      <div class="card__header">
+        <div class="avatar" aria-hidden="true">AT</div>
+
+        <div class="titles">
+          <h1>ورود به پنل مدیریت</h1>
+          <p>برای ادامه، نام‌کاربری و رمز عبور مدیر خود را وارد کنید.</p>
+        </div>
+      </div>
+
+      <form id="loginForm" class="form" autocomplete="on" novalidate>
+        <label class="field">
+          <span class="field__label">نام کاربری</span>
+          <input id="username" name="username" type="text" inputmode="text" placeholder="نام کاربری ادمین" />
+        </label>
+
+        <label class="field">
+          <span class="field__label">رمز عبور</span>
+          <div class="password">
+            <input id="password" name="password" type="password" placeholder="رمز عبور" />
+            <button id="togglePass" class="iconBtn" type="button" aria-label="نمایش/مخفی کردن رمز">
+              👁️
+            </button>
+          </div>
+        </label>
+
+        <div id="errorBox" class="error" role="alert" aria-live="polite"></div>
+
+        <button id="submitBtn" class="btn btn--primary" type="submit">
+          <span class="btn__text">ورود به داشبورد</span>
+          <span class="btn__spinner" aria-hidden="true"></span>
+        </button>
+
+        <a class="link" href="/" title="ورود کاربران معمولی">ورود کاربران معمولی</a>
+      </form>
+    </section>
+  </main>
+
+  <script src="/js/author-login.js"></script>
+</body>
+</html>

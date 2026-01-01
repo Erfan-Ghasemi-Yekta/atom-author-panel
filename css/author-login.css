@@ -1,0 +1,181 @@
+:root{
+  /* Palette from you */
+  --bg: #0F172A;             /* background_color */
+  --card: #1E293B;           /* cart_color */
+  --border: #374151;         /* borders_color */
+  --white: #FEFEFE;          /* white_color */
+  --primary: #00F5FF;        /* primary_color */
+  --danger: #F87171;         /* delete_exit_buttons */
+  --warn: #D99F09;           /* some_buttons_color */
+
+  --muted: rgba(254,254,254,.72);
+  --shadow: 0 18px 60px rgba(0,0,0,.35);
+  --radius: 18px;
+}
+
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: "Vazirmatn", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--white);
+  background:
+    radial-gradient(1200px 520px at 30% 20%, rgba(0,245,255,.12), rgba(0,245,255,0) 60%),
+    radial-gradient(900px 520px at 70% 60%, rgba(217,159,9,.10), rgba(217,159,9,0) 55%),
+    linear-gradient(135deg, #111827 0%, var(--bg) 55%, #0B1220 100%);
+}
+
+.page{
+  min-height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding: 24px;
+}
+
+.card{
+  width:min(460px, 92vw);
+  background: rgba(30,41,59,.80);
+  border: 1px solid rgba(55,65,81,.75);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px 22px 18px;
+  backdrop-filter: blur(10px);
+}
+
+.card__header{
+  display:flex;
+  align-items:flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.avatar{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--primary);
+  color: #062227;
+  font-weight: 800;
+  display:grid;
+  place-items:center;
+  flex: 0 0 auto;
+  box-shadow: 0 10px 30px rgba(0,245,255,.20);
+}
+
+.titles h1{
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+.titles p{
+  margin:0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.form{ margin-top: 8px; }
+.field{
+  display:block;
+  margin-top: 12px;
+}
+.field__label{
+  display:block;
+  font-size: 12px;
+  color: rgba(254,254,254,.85);
+  margin-bottom: 6px;
+}
+input{
+  width:100%;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(55,65,81,.9);
+  background: rgba(15,23,42,.55);
+  color: var(--white);
+  padding: 0 12px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+input::placeholder{ color: rgba(254,254,254,.35); }
+input:focus{
+  border-color: rgba(0,245,255,.85);
+  box-shadow: 0 0 0 3px rgba(0,245,255,.12);
+}
+
+.password{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+.password input{ flex: 1 1 auto; }
+
+.iconBtn{
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(55,65,81,.9);
+  background: rgba(15,23,42,.55);
+  color: rgba(254,254,254,.85);
+  cursor: pointer;
+  transition: transform .12s ease, border-color .15s ease;
+}
+.iconBtn:hover{ transform: translateY(-1px); }
+.iconBtn:active{ transform: translateY(0); }
+
+.error{
+  display:none;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(248,113,113,.65);
+  background: rgba(248,113,113,.10);
+  color: rgba(254,254,254,.92);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.btn{
+  width: 100%;
+  height: 44px;
+  margin-top: 14px;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 800;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 10px;
+}
+.btn--primary{
+  background: var(--primary);
+  color: #062227;
+  box-shadow: 0 12px 30px rgba(0,245,255,.18);
+  transition: transform .12s ease, filter .15s ease;
+}
+.btn--primary:hover{ transform: translateY(-1px); filter: brightness(1.02); }
+.btn--primary:active{ transform: translateY(0); }
+.btn[disabled]{ opacity: .75; cursor: not-allowed; }
+
+.btn__spinner{
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  border: 2px solid rgba(6,34,39,.25);
+  border-top-color: rgba(6,34,39,.9);
+  display:none;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin{ to{ transform: rotate(360deg); } }
+
+.link{
+  display:block;
+  margin-top: 14px;
+  text-align: left;
+  color: rgba(254,254,254,.78);
+  text-decoration: none;
+  font-size: 12px;
+}
+.link:hover{ color: var(--primary); text-decoration: underline; }

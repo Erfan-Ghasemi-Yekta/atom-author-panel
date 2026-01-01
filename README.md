@@ -1,34 +1,31 @@
-# پنل نویسنده (Front-end) — Atom Game
+# Unified Author Panel (Absolute Paths)
 
-این پروژه یک پنل مدیریتی ساده با HTML/CSS/JS خالص است که با API های داخل فایل `Atom Game API.yaml` کار می‌کند.
+Structure (as requested):
+- All HTML: /author-panel/*.html
+  - /author-panel/login.html      (login)
+  - /author-panel/index.html      (dashboard)
+  - /author-panel/posts.html
+  - /author-panel/authors.html
+  - /author-panel/categories.html
+  - /author-panel/tags.html
+  - /author-panel/comments.html
+  - /author-panel/medias.html
+  - /author-panel/reactions.html
+  - /author-panel/series.html
 
-## صفحات
-- `index.html` (Login + Dashboard)
-- `posts.html`
-- `Categories.html`
-- `Tags.html`
-- `Author profiles.html`
+- All CSS: /css/
+  - /css/author-login.css
+  - /css/author-panel.css
 
-## احراز هویت (JWT)
-- Login: `POST /api/token/` (اولویت)
-- Refresh: `POST /api/token/refresh/`
-- Fallback login: `POST /api/users/auth/admin-login/`
+- All JS: /js/
+  - /js/author-login.js
+  - /js/author-panel.js
 
-توکن‌ها در `localStorage` ذخیره می‌شوند.
+Notes:
+- Panel pages require localStorage token `atom_access`. If missing, redirect to /author-panel/login.html
+- Login validates AuthorProfile (writer) by using token -> /api/users/users/me/ -> /api/blog/authors/{id}/
 
-## تنظیم Base URL
-در فایل `app.js` مقدار زیر را تنظیم کنید (اگر بک‌اند روی دامنه دیگری است):
-
-```js
-const API_BASE = "https://YOUR_DOMAIN";
-```
-
-اگر فرانت و بک‌اند روی یک دامنه هستند، خالی بگذارید.
-
-## نکته‌ی CORS
-اگر صفحات را از دامنه/پورت دیگری باز می‌کنید، بک‌اند باید CORS را برای آن Origin فعال کرده باشد.
-
-## اجرا
-این پروژه Static است. کافی است فایل‌ها را روی هاست قرار دهید یا با یک Static Server اجرا کنید.
-
-> اگر مستقیم با `file://` باز کنید ممکن است برخی مرورگرها محدودیت‌هایی برای `fetch` داشته باشند.
+Compatibility:
+- A redirect helper exists at /author-panel/author.html (redirects to dashboard).
+  If you previously used /author.html, you should create a server redirect from /author.html to /author-panel/index.html
+  (or keep a small /author.html file).
