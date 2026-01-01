@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reactions | پنل نویسنده</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/author-panel.css" />
+</head>
+<body>
+  <div class="container">
+    
+<main class="main">
+  <div class="topbar">
+    <div class="topbar__title">
+      <h1>Reactions</h1>
+      <p>مدیریت واکنش‌ها (فعلاً اسکلت).</p>
+    </div>
+    <div class="pill">پنل نویسنده</div>
+  </div>
+
+  <div class="placeholder">
+    محتوای این صفحه فعلاً ساخته نشده.
+    <br/>
+    وقتی گفتی، همین بخش را به API وصل می‌کنیم و جدول/فرم‌ها را می‌سازیم.
+  </div>
+</main>
+
+    
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__logo">
+          <div class="logoMark">AT</div>
+          <div class="brand__title">
+            <strong>ATOM</strong>
+            <span>Author Panel</span>
+          </div>
+        </div>
+        <div class="pill" style="padding:6px 10px;font-size:11px;">داشبورد</div>
+      </div>
+
+      <div class="userChip" title="کاربر وارد شده">
+        <div class="userChip__avatar" id="userAvatar">AT</div>
+        <div class="userChip__meta">
+          <b id="userName">نویسنده</b>
+          <small id="userRole">Author Panel</small>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="منوی پنل نویسنده">
+        <a href="/author-panel/index.html" data-nav="index.html"><span>Dashboard</span><span class="hint">★</span></a>
+        <a href="/author-panel/posts.html" data-nav="posts.html"><span>Posts</span><span class="hint">→</span></a>
+        <a href="/author-panel/author-profiles.html" data-nav="author-profiles"><span>Author profiles</span><span class="hint">→</span></a>
+        <a href="/author-panel/categories.html" data-nav="categories.html"><span>Categories</span><span class="hint">→</span></a>
+        <a href="/author-panel/tags.html" data-nav="tags.html"><span>Tags</span><span class="hint">→</span></a>
+        <a href="/author-panel/comments.html" data-nav="comments.html"><span>Comments</span><span class="hint">→</span></a>
+        <a href="/author-panel/medias.html" data-nav="medias.html"><span>Medias</span><span class="hint">→</span></a>
+        <a href="/author-panel/reactions.html" data-nav="reactions.html"><span>Reactions</span><span class="hint">→</span></a>
+        <a href="/author-panel/series.html" data-nav="series.html"><span>Series</span><span class="hint">→</span></a>
+      </nav>
+
+      <div class="sidebar__footer">
+        <button class="btn" type="button" onclick="window.location.href='/'">بازگشت به سایت</button>
+        <button id="logoutBtn" class="btn btn--danger" type="button">خروج از حساب</button>
+      </div>
+    </aside>
+
+  </div>
+
+  <script src="/js/author-panel.js"></script>
+</body>
+</html>

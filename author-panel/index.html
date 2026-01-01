@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>داشبورد | پنل نویسنده</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/author-panel.css" />
+</head>
+<body>
+  <div class="container">
+    
+<main class="main">
+  <div class="mainHeader">
+    <div class="headerUser" title="کاربر وارد شده">
+      <div class="headerUser__avatar" id="userAvatarTop">AT</div>
+      <div class="headerUser__meta">
+        <b id="userNameTop">نویسنده</b>
+        <small id="userRoleTop">داشبورد نویسنده</small>
+      </div>
+    </div>
+    <div class="pill">داشبورد</div>
+  </div>
+
+  <section class="hero" aria-label="کارت معرفی">
+    <div class="heroTop">
+      <div class="heroTitle">
+        <h2>مرکز کنترل نویسنده</h2>
+        <p>
+          از اینجا می‌تونی پست‌ها، دسته‌بندی‌ها، تگ‌ها، کامنت‌ها و رسانه‌ها رو مدیریت کنی.
+          در مراحل بعدی همین بخش‌ها به API وصل می‌شن و CRUD کامل اضافه می‌کنیم.
+        </p>
+      </div>
+      <button class="heroBtn" type="button">به‌روزرسانی داشبورد</button>
+    </div>
+  </section>
+
+  <section class="statRow" aria-label="آمار سریع">
+    <div class="statCard">
+      <div class="statCard__top">
+        <div class="statCard__label">پست‌های منتشر شده</div>
+        <div class="statCard__icon">📝</div>
+      </div>
+      <div class="statCard__value">--</div>
+      <div class="statCard__hint">بعداً از API خوانده می‌شود.</div>
+    </div>
+
+    <div class="statCard">
+      <div class="statCard__top">
+        <div class="statCard__label">پیش‌نویس‌ها</div>
+        <div class="statCard__icon">📄</div>
+      </div>
+      <div class="statCard__value">--</div>
+      <div class="statCard__hint">پست‌های در انتظار انتشار.</div>
+    </div>
+
+    <div class="statCard">
+      <div class="statCard__top">
+        <div class="statCard__label">کامنت‌های جدید</div>
+        <div class="statCard__icon">💬</div>
+      </div>
+      <div class="statCard__value">--</div>
+      <div class="statCard__hint">کامنت‌هایی که نیاز به بررسی دارند.</div>
+    </div>
+
+    <div class="statCard">
+      <div class="statCard__top">
+        <div class="statCard__label">رسانه‌ها</div>
+        <div class="statCard__icon">🖼️</div>
+      </div>
+      <div class="statCard__value">--</div>
+      <div class="statCard__hint">تصاویر/ویدیوهای آپلود شده.</div>
+    </div>
+  </section>
+
+  <section class="dashboardGrid" aria-label="ویجت‌ها">
+    <div class="panelCard panelCard--accent">
+      <div class="panelCard__head">
+        <div>
+          <h3>آخرین پست‌ها</h3>
+          <p>پست‌هایی که اخیراً ایجاد یا ویرایش شده‌اند.</p>
+        </div>
+        <button class="badgeBtn" type="button" onclick="window.location.href='/author-panel/posts.html'">مشاهده</button>
+      </div>
+
+      <div class="list">
+        <div class="listItem">
+          <b>پست نمونه ۱</b>
+          <div class="meta">
+            <span>وضعیت: پیش‌نویس</span>
+            <span>آخرین تغییر: --</span>
+          </div>
+        </div>
+        <div class="listItem">
+          <b>پست نمونه ۲</b>
+          <div class="meta">
+            <span>وضعیت: منتشر شده</span>
+            <span>آخرین تغییر: --</span>
+          </div>
+        </div>
+        <div class="listItem">
+          <b>پست نمونه ۳</b>
+          <div class="meta">
+            <span>وضعیت: پیش‌نویس</span>
+            <span>آخرین تغییر: --</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panelCard">
+      <div class="panelCard__head">
+        <div>
+          <h3>دسته‌بندی‌های پربازدید</h3>
+          <p>این بخش بعداً به آمار بازدید و تعامل وصل می‌شود.</p>
+        </div>
+        <button class="badgeBtn" type="button" onclick="window.location.href='/author-panel/categories.html'">مدیریت</button>
+      </div>
+
+      <div class="list">
+        <div class="listItem">
+          <b>Category نمونه</b>
+          <div class="meta">
+            <span>پست‌ها: --</span>
+            <span>بازدید: --</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panelCard">
+      <div class="panelCard__head">
+        <div>
+          <h3>تعاملات اخیر</h3>
+          <p>نمودار تعامل (کامنت/ری‌اکشن) در هفته اخیر.</p>
+        </div>
+        <button class="badgeBtn" type="button" onclick="window.location.href='/author-panel/reactions.html'">جزئیات</button>
+      </div>
+
+      <div class="chartBox">نمودار بعداً اضافه می‌شود</div>
+
+      <div class="legend">
+        <span><span class="dot dot--a"></span>ری‌اکشن‌ها</span>
+        <span><span class="dot dot--b"></span>کامنت‌ها</span>
+        <span><span class="dot dot--c"></span>گزارش‌ها</span>
+      </div>
+    </div>
+  </section>
+</main>
+
+    
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand__logo">
+          <div class="logoMark">AT</div>
+          <div class="brand__title">
+            <strong>ATOM</strong>
+            <span>Author Panel</span>
+          </div>
+        </div>
+        <div class="pill" style="padding:6px 10px;font-size:11px;">داشبورد</div>
+      </div>
+
+      <div class="userChip" title="کاربر وارد شده">
+        <div class="userChip__avatar" id="userAvatar">AT</div>
+        <div class="userChip__meta">
+          <b id="userName">نویسنده</b>
+          <small id="userRole">Author Panel</small>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="منوی پنل نویسنده">
+        <a href="/author-panel/index.html" data-nav="index.html"><span>Dashboard</span><span class="hint">★</span></a>
+        <a href="/author-panel/posts.html" data-nav="posts.html"><span>Posts</span><span class="hint">→</span></a>
+        <a href="/author-panel/author-profiles.html" data-nav="author-profiles"><span>Author profiles</span><span class="hint">→</span></a>
+        <a href="/author-panel/categories.html" data-nav="categories.html"><span>Categories</span><span class="hint">→</span></a>
+        <a href="/author-panel/tags.html" data-nav="tags.html"><span>Tags</span><span class="hint">→</span></a>
+        <a href="/author-panel/comments.html" data-nav="comments.html"><span>Comments</span><span class="hint">→</span></a>
+        <a href="/author-panel/medias.html" data-nav="medias.html"><span>Medias</span><span class="hint">→</span></a>
+        <a href="/author-panel/reactions.html" data-nav="reactions.html"><span>Reactions</span><span class="hint">→</span></a>
+        <a href="/author-panel/series.html" data-nav="series.html"><span>Series</span><span class="hint">→</span></a>
+      </nav>
+
+      <div class="sidebar__footer">
+        <button class="btn" type="button" onclick="window.location.href='/'">بازگشت به سایت</button>
+        <button id="logoutBtn" class="btn btn--danger" type="button">خروج از حساب</button>
+      </div>
+    </aside>
+
+  </div>
+
+  <script src="/js/author-panel.js"></script>
+</body>
+</html>
