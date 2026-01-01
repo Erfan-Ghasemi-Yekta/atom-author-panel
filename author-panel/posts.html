@@ -10,27 +10,381 @@
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/css/author-panel.css" />
+  <!-- استایل اختصاصی صفحه پست‌ها -->
+  <link rel="stylesheet" href="/css/author-posts.css" />
 </head>
 <body>
   <div class="container">
-    
-<main class="main">
-  <div class="topbar">
-    <div class="topbar__title">
-      <h1>Posts</h1>
-      <p>مدیریت پست‌ها (فعلاً اسکلت).</p>
-    </div>
-    <div class="pill">پنل نویسنده</div>
-  </div>
 
-  <div class="placeholder">
-    محتوای این صفحه فعلاً ساخته نشده.
-    <br/>
-    وقتی گفتی، همین بخش را به API وصل می‌کنیم و جدول/فرم‌ها را می‌سازیم.
-  </div>
-</main>
+    <main class="main">
+      <div class="mainHeader">
+        <div class="headerUser" title="کاربر وارد شده">
+          <div class="headerUser__avatar" id="userAvatarTop">AT</div>
+          <div class="headerUser__meta">
+            <b id="userNameTop">نویسنده</b>
+            <small id="userRoleTop">مدیریت پست‌ها</small>
+          </div>
+        </div>
 
-    
+        <div class="headerActions">
+          <button class="btn btn--primary" id="newPostBtn" type="button">پست جدید</button>
+          <button class="btn" id="refreshPostsBtn" type="button">به‌روزرسانی</button>
+          <div class="pill">Posts</div>
+        </div>
+      </div>
+
+      <section class="hero hero--compact" aria-label="معرفی">
+        <div class="heroTop">
+          <div class="heroTitle">
+            <h2>مدیریت پست‌ها</h2>
+            <p>نمایش همه پست‌ها، فیلتر پیشرفته، ساخت پست جدید و ویرایش/انتشار.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panelCard" aria-label="فیلترها و جستجو">
+        <div class="panelCard__head">
+          <div>
+            <h3>فیلتر و جستجو</h3>
+            <p>فیلترها روی API اعمال می‌شوند؛ وضعیت (Status) به صورت کلاینتی فیلتر می‌شود.</p>
+          </div>
+          <div class="chipRow" id="activeFilters"></div>
+        </div>
+
+        <form id="filtersForm" class="filters" autocomplete="off">
+          <label class="field">
+            <span>جستجو</span>
+            <input id="fSearch" type="search" placeholder="عنوان، خلاصه..." />
+          </label>
+
+          <label class="field">
+            <span>وضعیت</span>
+            <select id="fStatus">
+              <option value="all">همه</option>
+              <option value="draft">پیش‌نویس</option>
+              <option value="review">در انتظار بررسی</option>
+              <option value="scheduled">زمان‌بندی شده</option>
+              <option value="published">منتشر شده</option>
+              <option value="archived">آرشیو</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>دسته</span>
+            <select id="fCategory">
+              <option value="all">همه دسته‌ها</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>تگ</span>
+            <select id="fTag">
+              <option value="all">همه تگ‌ها</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>نمایش</span>
+            <select id="fVisibility">
+              <option value="all">همه</option>
+              <option value="public">عمومی</option>
+              <option value="private">خصوصی</option>
+              <option value="unlisted">غیرلیست‌شده</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Hot</span>
+            <select id="fIsHot">
+              <option value="all">همه</option>
+              <option value="true">بله</option>
+              <option value="false">خیر</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>از تاریخ</span>
+            <input id="fFrom" type="date" />
+          </label>
+
+          <label class="field">
+            <span>تا تاریخ</span>
+            <input id="fTo" type="date" />
+          </label>
+
+          <label class="field">
+            <span>مرتب‌سازی</span>
+            <select id="fOrdering">
+              <option value="-published_at">جدیدترین انتشار</option>
+              <option value="published_at">قدیمی‌ترین انتشار</option>
+              <option value="-views_count">بیشترین بازدید</option>
+              <option value="views_count">کمترین بازدید</option>
+              <option value="title">عنوان (A→Z)</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>تعداد در صفحه</span>
+            <select id="fPageSize">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </label>
+
+          <div class="filterActions">
+            <button class="btn btn--primary" id="applyFiltersBtn" type="button">اعمال فیلتر</button>
+            <button class="btn btn--ghost" id="resetFiltersBtn" type="button">پاک کردن</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="statRow" aria-label="آمار">
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">کل</div>
+            <div class="statCard__value" id="statTotal">—</div>
+          </div>
+          <div class="statCard__hint">تعداد کل پست‌ها</div>
+        </div>
+
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">نمایش</div>
+            <div class="statCard__value" id="statShown">—</div>
+          </div>
+          <div class="statCard__hint">تعداد مطابق فیلتر</div>
+        </div>
+
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">منتشر</div>
+            <div class="statCard__value" id="statPublished">—</div>
+          </div>
+          <div class="statCard__hint">Published</div>
+        </div>
+
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">پیش‌نویس</div>
+            <div class="statCard__value" id="statDraft">—</div>
+          </div>
+          <div class="statCard__hint">Draft</div>
+        </div>
+
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">بررسی</div>
+            <div class="statCard__value" id="statReview">—</div>
+          </div>
+          <div class="statCard__hint">Review</div>
+        </div>
+
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">زمان‌بندی</div>
+            <div class="statCard__value" id="statScheduled">—</div>
+          </div>
+          <div class="statCard__hint">Scheduled</div>
+        </div>
+
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">آرشیو</div>
+            <div class="statCard__value" id="statArchived">—</div>
+          </div>
+          <div class="statCard__hint">Archived</div>
+        </div>
+      </section>
+
+      <section class="panelCard" aria-label="لیست پست‌ها">
+        <div class="panelCard__head">
+          <div>
+            <h3>لیست پست‌ها</h3>
+            <p id="resultsHint">—</p>
+          </div>
+        </div>
+
+        <div class="tableWrap">
+          <table class="dataTable">
+            <thead>
+              <tr>
+                <th>عنوان</th>
+                <th>وضعیت</th>
+                <th>نمایش</th>
+                <th>تاریخ انتشار</th>
+                <th class="num">بازدید</th>
+                <th class="num">لایک</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="postsTbody">
+              <tr><td colspan="7" class="loadingCell">در حال دریافت لیست پست‌ها...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination" id="paginationBar"></div>
+      </section>
+
+      <!-- Modal: Create/Edit Post -->
+      <div class="modal" id="postModal" aria-hidden="true">
+        <div class="modal__backdrop" data-close="1"></div>
+        <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="postModalTitle">
+          <div class="modal__head">
+            <div>
+              <h3 id="postModalTitle">—</h3>
+              <p id="postModalSub" class="muted">—</p>
+            </div>
+            <button class="iconBtn" id="closePostModalBtn" type="button" aria-label="بستن">✕</button>
+          </div>
+
+          <form id="postForm" class="formGrid" autocomplete="off">
+            <div id="formError" class="formError hidden"></div>
+
+            <label class="field field--span2">
+              <span>عنوان</span>
+              <input id="pTitle" type="text" placeholder="عنوان پست..." />
+            </label>
+
+            <label class="field">
+              <span>Slug (اختیاری)</span>
+              <input id="pSlug" type="text" placeholder="اختیاری — اگر خالی باشد سرور می‌سازد" />
+            </label>
+
+            <label class="field">
+              <span>دسته</span>
+              <select id="pCategory"></select>
+            </label>
+
+            <label class="field">
+              <span>سری (اختیاری)</span>
+              <select id="pSeries"></select>
+            </label>
+
+            <label class="field">
+              <span>Visibility</span>
+              <select id="pVisibility">
+                <option value="public">عمومی</option>
+                <option value="private">خصوصی</option>
+                <option value="unlisted">غیرلیست‌شده</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Status</span>
+              <select id="pStatus">
+                <option value="draft">پیش‌نویس</option>
+                <option value="review">در انتظار بررسی</option>
+                <option value="scheduled">زمان‌بندی شده</option>
+                <option value="published">منتشر شده</option>
+                <option value="archived">آرشیو</option>
+              </select>
+            </label>
+
+            <label class="field field--checkbox">
+              <input id="pIsHot" type="checkbox" />
+              <span>Hot (نمایش ویژه)</span>
+            </label>
+
+            <label class="field field--span2">
+              <span>خلاصه</span>
+              <textarea id="pExcerpt" rows="3" placeholder="خلاصه کوتاه..."></textarea>
+            </label>
+
+            <label class="field field--span2">
+              <span>محتوا</span>
+              <textarea id="pContent" rows="10" placeholder="متن کامل پست..."></textarea>
+            </label>
+
+            <div class="field field--span2">
+              <span>تگ‌ها</span>
+              <input id="tagSearch" class="tagSearch" type="text" placeholder="جستجوی تگ..." />
+              <div id="tagsGrid" class="tagGrid"></div>
+              <small id="tagsSelectedHint" class="help">—</small>
+            </div>
+
+            <label class="field">
+              <span>Cover Media ID</span>
+              <div class="inlineRow">
+                <input id="pCoverMediaId" type="number" min="1" placeholder="مثلاً 12" />
+                <button class="btn btn--small" type="button" id="pickCoverBtn">انتخاب</button>
+              </div>
+            </label>
+
+            <label class="field">
+              <span>OG Image ID</span>
+              <div class="inlineRow">
+                <input id="pOgImageId" type="number" min="1" placeholder="مثلاً 34" />
+                <button class="btn btn--small" type="button" id="pickOgBtn">انتخاب</button>
+              </div>
+            </label>
+
+            <label class="field">
+              <span>SEO Title</span>
+              <input id="pSeoTitle" type="text" placeholder="اختیاری" />
+            </label>
+
+            <label class="field">
+              <span>Canonical URL</span>
+              <input id="pCanonical" type="url" placeholder="اختیاری" />
+            </label>
+
+            <label class="field field--span2">
+              <span>SEO Description</span>
+              <textarea id="pSeoDesc" rows="2" placeholder="اختیاری"></textarea>
+            </label>
+
+            <div class="modal__actions">
+              <button class="btn btn--ghost" id="cancelPostBtn" type="button">انصراف</button>
+              <button class="btn btn--primary" type="submit">ذخیره</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Media Picker Modal -->
+      <div class="modal" id="mediaPickerModal" aria-hidden="true">
+        <div class="modal__backdrop" data-close="1"></div>
+        <div class="modal__dialog modal__dialog--wide" role="dialog" aria-modal="true">
+          <div class="modal__head">
+            <div>
+              <h3 id="mediaPickerTitle">انتخاب رسانه</h3>
+              <p class="muted">فقط تصاویر نمایش داده می‌شوند.</p>
+            </div>
+            <button class="iconBtn" id="closeMediaPickerBtn" type="button" aria-label="بستن">✕</button>
+          </div>
+
+          <div class="mediaToolbar">
+            <input id="mediaSearch" type="search" placeholder="جستجوی رسانه..." />
+            <button class="btn btn--small" id="mediaLoadMoreBtn" type="button">بیشتر</button>
+          </div>
+
+          <div class="mediaGrid" id="mediaGrid"></div>
+        </div>
+      </div>
+
+      <!-- Confirm Modal -->
+      <div class="modal" id="confirmModal" aria-hidden="true">
+        <div class="modal__backdrop" data-close="1"></div>
+        <div class="modal__dialog" role="dialog" aria-modal="true">
+          <div class="modal__head">
+            <div>
+              <h3 id="confirmTitle">تأیید</h3>
+              <p id="confirmMsg" class="muted">—</p>
+            </div>
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn--danger" id="confirmYesBtn" type="button">بله</button>
+            <button class="btn btn--ghost" id="confirmNoBtn" type="button">انصراف</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+
+    </main>
+
     <aside class="sidebar">
       <div class="brand">
         <div class="brand__logo">
@@ -40,7 +394,7 @@
             <span>Author Panel</span>
           </div>
         </div>
-        <div class="pill" style="padding:6px 10px;font-size:11px;">داشبورد</div>
+        <div class="pill" style="padding:6px 10px;font-size:11px;">پست‌ها</div>
       </div>
 
       <div class="userChip" title="کاربر وارد شده">
@@ -54,7 +408,7 @@
       <nav class="nav" aria-label="منوی پنل نویسنده">
         <a href="/author-panel/index.html" data-nav="index.html"><span>Dashboard</span><span class="hint">★</span></a>
         <a href="/author-panel/posts.html" data-nav="posts.html"><span>Posts</span><span class="hint">→</span></a>
-        <a href="/author-panel/author-profiles.html" data-nav="author-profiles"><span>Author profiles</span><span class="hint">→</span></a>
+        <a href="/author-panel/author-profiles.html" data-nav="author-profiles.html"><span>Author profiles</span><span class="hint">→</span></a>
         <a href="/author-panel/categories.html" data-nav="categories.html"><span>Categories</span><span class="hint">→</span></a>
         <a href="/author-panel/tags.html" data-nav="tags.html"><span>Tags</span><span class="hint">→</span></a>
         <a href="/author-panel/comments.html" data-nav="comments.html"><span>Comments</span><span class="hint">→</span></a>
@@ -72,5 +426,6 @@
   </div>
 
   <script src="/js/author-panel.js"></script>
+  <script src="/js/author-posts.js"></script>
 </body>
 </html>
