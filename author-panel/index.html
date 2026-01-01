@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/css/author-panel.css" />
+  <link rel="stylesheet" href="/css/author-dashboard.css" />
 </head>
 <body>
   <div class="container">
@@ -35,7 +36,7 @@
           در مراحل بعدی همین بخش‌ها به API وصل می‌شن و CRUD کامل اضافه می‌کنیم.
         </p>
       </div>
-      <button class="heroBtn" type="button">به‌روزرسانی داشبورد</button>
+      <button class="heroBtn" id="refreshDashboardBtn" type="button">به‌روزرسانی داشبورد</button>
     </div>
   </section>
 
@@ -45,7 +46,7 @@
         <div class="statCard__label">پست‌های منتشر شده</div>
         <div class="statCard__icon">📝</div>
       </div>
-      <div class="statCard__value">--</div>
+      <div class="statCard__value" id="statPublished">--</div>
       <div class="statCard__hint">بعداً از API خوانده می‌شود.</div>
     </div>
 
@@ -54,7 +55,7 @@
         <div class="statCard__label">پیش‌نویس‌ها</div>
         <div class="statCard__icon">📄</div>
       </div>
-      <div class="statCard__value">--</div>
+      <div class="statCard__value" id="statDrafts">--</div>
       <div class="statCard__hint">پست‌های در انتظار انتشار.</div>
     </div>
 
@@ -63,7 +64,7 @@
         <div class="statCard__label">کامنت‌های جدید</div>
         <div class="statCard__icon">💬</div>
       </div>
-      <div class="statCard__value">--</div>
+      <div class="statCard__value" id="statPendingComments">--</div>
       <div class="statCard__hint">کامنت‌هایی که نیاز به بررسی دارند.</div>
     </div>
 
@@ -72,7 +73,7 @@
         <div class="statCard__label">رسانه‌ها</div>
         <div class="statCard__icon">🖼️</div>
       </div>
-      <div class="statCard__value">--</div>
+      <div class="statCard__value" id="statMedia">--</div>
       <div class="statCard__hint">تصاویر/ویدیوهای آپلود شده.</div>
     </div>
   </section>
@@ -88,27 +89,9 @@
       </div>
 
       <div class="list">
-        <div class="listItem">
-          <b>پست نمونه ۱</b>
-          <div class="meta">
-            <span>وضعیت: پیش‌نویس</span>
-            <span>آخرین تغییر: --</span>
-          </div>
-        </div>
-        <div class="listItem">
-          <b>پست نمونه ۲</b>
-          <div class="meta">
-            <span>وضعیت: منتشر شده</span>
-            <span>آخرین تغییر: --</span>
-          </div>
-        </div>
-        <div class="listItem">
-          <b>پست نمونه ۳</b>
-          <div class="meta">
-            <span>وضعیت: پیش‌نویس</span>
-            <span>آخرین تغییر: --</span>
-          </div>
-        </div>
+        <div class="listItem listItem--loading" id="latestPostsLoading">در حال بارگذاری…</div>
+        <div id="latestPostsList"></div>
+        <div class="listItem listItem--error" id="latestPostsError" style="display:none;"></div>
       </div>
     </div>
 
@@ -122,13 +105,9 @@
       </div>
 
       <div class="list">
-        <div class="listItem">
-          <b>Category نمونه</b>
-          <div class="meta">
-            <span>پست‌ها: --</span>
-            <span>بازدید: --</span>
-          </div>
-        </div>
+        <div class="listItem listItem--loading" id="topCategoriesLoading">در حال بارگذاری…</div>
+        <div id="topCategoriesList"></div>
+        <div class="listItem listItem--error" id="topCategoriesError" style="display:none;"></div>
       </div>
     </div>
 
@@ -141,7 +120,11 @@
         <button class="badgeBtn" type="button" onclick="window.location.href='/author-panel/reactions.html'">جزئیات</button>
       </div>
 
-      <div class="chartBox">نمودار بعداً اضافه می‌شود</div>
+      <div class="chartBox" id="interactionsChart" aria-label="نمودار تعاملات هفته اخیر">
+        <div class="chartLoading" id="interactionsLoading">در حال بارگذاری…</div>
+        <div class="barChart" id="interactionsBars" style="display:none;"></div>
+        <div class="chartError" id="interactionsError" style="display:none;"></div>
+      </div>
 
       <div class="legend">
         <span><span class="dot dot--a"></span>ری‌اکشن‌ها</span>
@@ -194,5 +177,6 @@
   </div>
 
   <script src="/js/author-panel.js"></script>
+  <script src="/js/author-dashboard.js"></script>
 </body>
 </html>
