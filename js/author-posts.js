@@ -88,6 +88,7 @@
     confirmMsg: $("confirmMsg"),
     confirmYesBtn: $("confirmYesBtn"),
     confirmNoBtn: $("confirmNoBtn"),
+    confirmAltBtn: $("confirmAltBtn"),
 
     // toast
     toast: $("toast")
@@ -121,7 +122,11 @@
       mediaTarget: null,
       mediaPage: 1,
       mediaHasNext: true,
-      mediaCache: []
+      mediaCache: [],
+      isDirty: false,
+      baseline: "",
+      suspendDirty: false,
+      closeAfterSave: false
     }
   };
 
@@ -524,15 +529,24 @@
     toast._t = setTimeout(()=>{ els.toast.className = "toast"; }, 3200);
   }
 
+
+  function syncBodyModalOpen(){
+    // Keep body scroll locked if ANY modal is open
+    const anyOpen = !!document.querySelector(".modal.isOpen");
+    document.body.classList.toggle("modalOpen", anyOpen);
+  }
+
   function openModal(modal){
     if(!modal) return;
     modal.classList.add("isOpen");
     modal.setAttribute("aria-hidden","false");
+    syncBodyModalOpen();
   }
   function closeModal(modal){
     if(!modal) return;
     modal.classList.remove("isOpen");
     modal.setAttribute("aria-hidden","true");
+    syncBodyModalOpen();
   }
 
   function confirmDialog({title="تأیید", message="مطمئنی؟", yesText="بله", noText="انصراف"} = {}){
@@ -542,6 +556,10 @@
       els.confirmMsg.textContent = message;
       els.confirmYesBtn.textContent = yesText;
       els.confirmNoBtn.textContent = noText;
+      if(els.confirmAltBtn){
+        els.confirmAltBtn.classList.add("hidden");
+        els.confirmAltBtn.onclick = null;
+      }
 
       const cleanup = ()=>{
         els.confirmYesBtn.onclick = null;
@@ -555,6 +573,87 @@
       openModal(els.confirmModal);
     });
   }
+
+  function choiceDialog({title="تأیید", message="مطمئنی؟", primaryText="ذخیره و بستن", dangerText="بستن بدون ذخیره", cancelText="انصراف"} = {}){
+    // Returns: "primary" | "danger" | "cancel"
+    return new Promise((resolve)=>{
+      if(!els.confirmModal) return resolve("cancel");
+      els.confirmTitle.textContent = title;
+      els.confirmMsg.textContent = message;
+
+      // show 3 buttons (re-using confirm modal)
+      if(els.confirmAltBtn){
+        els.confirmAltBtn.textContent = primaryText;
+        els.confirmAltBtn.classList.remove("hidden");
+      }
+      els.confirmYesBtn.textContent = dangerText;
+      els.confirmNoBtn.textContent = cancelText;
+
+      // Make “danger” button visually dangerous
+      els.confirmYesBtn.classList.add("btn--danger");
+      els.confirmYesBtn.classList.remove("btn--primary");
+
+      const cleanup = ()=>{
+        if(els.confirmAltBtn){ els.confirmAltBtn.onclick = null; els.confirmAltBtn.classList.add("hidden"); }
+        els.confirmYesBtn.onclick = null;
+        els.confirmNoBtn.onclick = null;
+        closeModal(els.confirmModal);
+      };
+
+      if(els.confirmAltBtn){
+        els.confirmAltBtn.onclick = ()=>{ cleanup(); resolve("primary"); };
+      }
+      els.confirmYesBtn.onclick = ()=>{ cleanup(); resolve("danger"); };
+      els.confirmNoBtn.onclick = ()=>{ cleanup(); resolve("cancel"); };
+
+      openModal(els.confirmModal);
+    });
+  }
+
+  async function attemptCloseEditor(){
+    // If media picker is open, close that first.
+    if(els.mediaPickerModal?.classList.contains("isOpen")){
+      closeModal(els.mediaPickerModal);
+      return;
+    }
+    // If confirm modal is open, ignore (user must choose)
+    if(els.confirmModal?.classList.contains("isOpen")) return;
+
+    recomputeDirty();
+    if(!state.editor.isDirty){
+      closeModal(els.postModal);
+      return;
+    }
+
+    const choice = await choiceDialog({
+      title: "بستن صفحه",
+      message: "تغییرات ذخیره نشده‌اند. می‌خواهید قبل از بستن ذخیره شوند؟",
+      primaryText: "ذخیره و بستن",
+      dangerText: "بستن بدون ذخیره",
+      cancelText: "ادامه ویرایش"
+    });
+
+    if(choice === "primary"){
+      // save (submit form) and close after success
+      state.editor.closeAfterSave = true;
+      // requestSubmit triggers validation + submit handler
+      if(els.postForm?.requestSubmit) els.postForm.requestSubmit();
+      else els.postForm?.dispatchEvent(new Event("submit", {cancelable:true, bubbles:true}));
+      return;
+    }
+
+    if(choice === "danger"){
+      // discard changes
+      state.editor.isDirty = false;
+      state.editor.baseline = "";
+      closeModal(els.postModal);
+      return;
+    }
+
+    // cancel => do nothing
+  }
+
+
 
   async function hydrateTopUser(){
     // Try to read from /me endpoint if configured, same as dashboard
@@ -655,13 +754,63 @@
     renderTagsGrid();
   }
 
+  function snapshotEditor(){
+    // snapshot of current form values to detect unsaved changes
+    const snap = {
+      mode: state.editor.mode,
+      slug: state.editor.slug,
+      title: String(els.pTitle?.value || ""),
+      slugField: String(els.pSlug?.value || ""),
+      excerpt: String(els.pExcerpt?.value || ""),
+      content: String(els.pContent?.value || ""),
+      category: String(els.pCategory?.value || ""),
+      series: String(els.pSeries?.value || ""),
+      visibility: String(els.pVisibility?.value || ""),
+      status: String(els.pStatus?.value || ""),
+      isHot: !!els.pIsHot?.checked,
+      seoTitle: String(els.pSeoTitle?.value || ""),
+      seoDesc: String(els.pSeoDesc?.value || ""),
+      canonical: String(els.pCanonical?.value || ""),
+      coverMediaId: String(els.pCoverMediaId?.value || ""),
+      ogImageId: String(els.pOgImageId?.value || ""),
+      tagIds: Array.from(state.editor.selectedTagIds.values()).sort((a,b)=>a-b)
+    };
+    try{ return JSON.stringify(snap); }catch(_){ return String(Date.now()); }
+  }
+
+  function setEditorBaseline(){
+    state.editor.baseline = snapshotEditor();
+    state.editor.isDirty = false;
+    updateEditorDirtyUI();
+  }
+
+  function recomputeDirty(){
+    if(state.editor.suspendDirty) return;
+    const now = snapshotEditor();
+    const dirty = !!state.editor.baseline && now !== state.editor.baseline;
+    if(dirty !== state.editor.isDirty){
+      state.editor.isDirty = dirty;
+      updateEditorDirtyUI();
+    }
+  }
+
+  function updateEditorDirtyUI(){
+    if(!els.postModalTitle) return;
+    const base = state.editor.mode === "create" ? "ساخت پست جدید" : "ویرایش پست";
+    els.postModalTitle.textContent = state.editor.isDirty ? (base + " *") : base;
+  }
+
+
   async function openCreateModal(){
     state.editor.mode = "create";
+    state.editor.closeAfterSave = false;
     state.editor.slug = null;
     resetPostForm();
     if(els.postModalTitle) els.postModalTitle.textContent = "ساخت پست جدید";
     if(els.postModalSub) els.postModalSub.textContent = "اطلاعات را وارد کن و ذخیره بزن.";
     openModal(els.postModal);
+    state.editor.suspendDirty = false;
+    setEditorBaseline();
 
     // auto slug when typing title (only if slug empty)
     if(els.pTitle && els.pSlug){
@@ -673,12 +822,14 @@
 
   async function openEditModal(slug){
     state.editor.mode = "edit";
+    state.editor.closeAfterSave = false;
     state.editor.slug = slug;
     resetPostForm();
 
     if(els.postModalTitle) els.postModalTitle.textContent = "ویرایش پست";
     if(els.postModalSub) els.postModalSub.textContent = slug ? `Slug: ${slug}` : "";
     openModal(els.postModal);
+    state.editor.suspendDirty = true;
 
     // slug stays fixed for safety
     if(els.pSlug){
@@ -717,7 +868,12 @@
       if(els.pCoverMediaId) els.pCoverMediaId.value = detail.cover_media?.id ? String(detail.cover_media.id) : "";
       if(els.pOgImageId) els.pOgImageId.value = detail.og_image?.id ? String(detail.og_image.id) : "";
 
+      state.editor.suspendDirty = false;
+      setEditorBaseline();
+
     }catch(err){
+      state.editor.suspendDirty = false;
+      setEditorBaseline();
       if(els.formError){
         els.formError.textContent = err.message || "خطا در دریافت اطلاعات پست";
         els.formError.classList.remove("hidden");
@@ -891,10 +1047,15 @@
         toast("پست ویرایش شد", "success");
       }
 
+      state.editor.isDirty = false;
+      state.editor.baseline = snapshotEditor();
+      state.editor.closeAfterSave = false;
       closeModal(els.postModal);
       await loadPosts();
 
     }catch(err){
+      state.editor.suspendDirty = false;
+      setEditorBaseline();
       if(els.formError){
         els.formError.textContent = err.message || "خطا در ذخیره پست";
         els.formError.classList.remove("hidden");
@@ -1040,13 +1201,26 @@
           if(els.pCoverMediaId) els.pCoverMediaId.value = String(m.id);
         }
         closeModal(els.mediaPickerModal);
+        recomputeDirty();
       });
       frag.appendChild(btn);
     }
     els.mediaGrid.appendChild(frag);
   }
 
-  function bindEvents(){
+  
+  function portalModalsToBody(){
+    // Move modals to <body> so position:fixed truly covers the viewport.
+    // This prevents clipping when the page uses nested scroll containers.
+    const modals = [els.postModal, els.mediaPickerModal, els.confirmModal].filter(Boolean);
+    for(const m of modals){
+      if(m && m.parentElement !== document.body){
+        document.body.appendChild(m);
+      }
+    }
+  }
+
+function bindEvents(){
     if(els.newPostBtn) els.newPostBtn.addEventListener("click", openCreateModal);
     if(els.refreshPostsBtn) els.refreshPostsBtn.addEventListener("click", async ()=>{
       readFiltersFromUI();
@@ -1091,15 +1265,19 @@
 
     // modal close
     const cancelPostBtn = $("cancelPostBtn");
-    if(cancelPostBtn) cancelPostBtn.addEventListener("click", ()=>closeModal(els.postModal));
-    if(els.closePostModalBtn) els.closePostModalBtn.addEventListener("click", ()=>closeModal(els.postModal));
+    if(cancelPostBtn) cancelPostBtn.addEventListener("click", attemptCloseEditor);
+    if(els.closePostModalBtn) els.closePostModalBtn.addEventListener("click", attemptCloseEditor);
     if(els.postModal){
       els.postModal.addEventListener("click", (e)=>{
-        if(e.target?.dataset?.close) closeModal(els.postModal);
+        if(e.target?.dataset?.close) attemptCloseEditor();
       });
     }
 
     if(els.postForm) els.postForm.addEventListener("submit", submitPostForm);
+    if(els.postForm){
+      els.postForm.addEventListener("input", recomputeDirty);
+      els.postForm.addEventListener("change", recomputeDirty);
+    }
 
     // tags selection
     if(els.tagsGrid){
@@ -1111,6 +1289,7 @@
         if(input.checked) state.editor.selectedTagIds.add(id);
         else state.editor.selectedTagIds.delete(id);
         updateSelectedTagsHint();
+        recomputeDirty();
       });
     }
     if(els.tagSearch) els.tagSearch.addEventListener("input", renderTagsGrid);
@@ -1143,13 +1322,14 @@
       if(e.key === "Escape"){
         if(els.mediaPickerModal?.classList.contains("isOpen")) closeModal(els.mediaPickerModal);
         if(els.confirmModal?.classList.contains("isOpen")) closeModal(els.confirmModal);
-        if(els.postModal?.classList.contains("isOpen")) closeModal(els.postModal);
+        if(els.postModal?.classList.contains("isOpen")) attemptCloseEditor();
       }
     });
   }
 
   async function init(){
     setFiltersUIFromState();
+    portalModalsToBody();
     bindEvents();
     await hydrateTopUser();
     await loadOptions();

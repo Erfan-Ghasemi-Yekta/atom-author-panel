@@ -598,3 +598,48 @@
 .dataTable td.actions .btn:last-child{
   margin-left: 0;
 }
+
+/* --- Full-page editor for Create/Edit Post (replaces centered modal with a full page overlay) --- */
+body.modalOpen{
+  overflow: hidden;
+}
+
+.modal--page{
+  padding: 0;
+  align-items: stretch;
+  justify-content: stretch;
+
+  /* ensure the editor behaves like a real full page, even if this node lives inside a scroll container */
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg);
+}
+
+/* In page mode we don't need a dimmed backdrop; keep DOM for accessibility but hide it */
+.modal--page .modal__backdrop{
+  display: none;
+}
+
+.modal--page .modal__dialog{
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  max-height: none;
+  border-radius: 0;
+  padding: 16px 18px;
+  overflow: auto;
+  background: var(--bg);
+}
+
+/* sticky header inside the editor */
+.modal--page .modal__head{
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 2;
+}
+
+/* subtle “page” separation */
+.modal--page .modal__head{
+  backdrop-filter: blur(8px);
+}
