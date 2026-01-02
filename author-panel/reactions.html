@@ -10,27 +10,202 @@
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/css/author-panel.css" />
+  <link rel="stylesheet" href="/css/author-reactions.css" />
 </head>
 <body>
   <div class="container">
-    
-<main class="main">
-  <div class="topbar">
-    <div class="topbar__title">
-      <h1>Reactions</h1>
-      <p>مدیریت واکنش‌ها (فعلاً اسکلت).</p>
-    </div>
-    <div class="pill">پنل نویسنده</div>
-  </div>
 
-  <div class="placeholder">
-    محتوای این صفحه فعلاً ساخته نشده.
-    <br/>
-    وقتی گفتی، همین بخش را به API وصل می‌کنیم و جدول/فرم‌ها را می‌سازیم.
-  </div>
-</main>
+    <main class="main">
+      <div class="mainHeader">
+        <div class="headerUser" title="کاربر وارد شده">
+          <div class="headerUser__avatar" id="userAvatarTop">AT</div>
+          <div class="headerUser__meta">
+            <b id="userNameTop">نویسنده</b>
+            <small id="userRoleTop">مدیریت واکنش‌ها</small>
+          </div>
+        </div>
 
-    
+        <div class="headerActions">
+          <button class="btn btn--primary" id="newReactionBtn" type="button">واکنش جدید</button>
+          <button class="btn" id="refreshReactionsBtn" type="button">به‌روزرسانی</button>
+          <div class="pill">Reactions</div>
+        </div>
+      </div>
+
+      <section class="hero hero--compact" aria-label="معرفی">
+        <div class="heroTop">
+          <div class="heroTitle">
+            <h2>مدیریت واکنش‌ها</h2>
+            <p>ساخت/ویرایش واکنش با فیلدهای User، Reaction، Content type و Object id.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panelCard" aria-label="فیلتر و جستجو">
+        <div class="panelCard__head">
+          <div>
+            <h3>جستجو</h3>
+            <p>جستجو روی Reaction، Content type، Object id و اطلاعات کاربر اعمال می‌شود.</p>
+          </div>
+          <div class="chipRow" id="activeFilters"></div>
+        </div>
+
+        <form id="filtersForm" class="filters filters--reactions" autocomplete="off">
+          <label class="field field--span2">
+            <span>جستجو</span>
+            <input id="fSearch" type="search" placeholder="reaction، #user id، username یا object id..." />
+          </label>
+
+          <label class="field">
+            <span>User ID</span>
+            <input id="fUserId" type="number" min="1" inputmode="numeric" placeholder="مثلاً 12" />
+          </label>
+
+          <label class="field">
+            <span>Reaction</span>
+            <input id="fReaction" type="text" placeholder="مثلاً like" />
+          </label>
+
+          <label class="field">
+            <span>Content type (ID)</span>
+            <input id="fContentType" type="number" min="1" inputmode="numeric" placeholder="مثلاً 19" />
+          </label>
+
+          <label class="field">
+            <span>تعداد در صفحه</span>
+            <select id="fPageSize">
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+            </select>
+          </label>
+
+          <div class="filterActions">
+            <button class="btn btn--primary" id="applyFiltersBtn" type="button">اعمال</button>
+            <button class="btn btn--ghost" id="resetFiltersBtn" type="button">پاک کردن</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="statRow statRow--reactions" aria-label="آمار">
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">کل</div>
+            <div class="statCard__value" id="statTotal">—</div>
+          </div>
+          <div class="statCard__hint">تعداد کل واکنش‌ها</div>
+        </div>
+
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">نمایش</div>
+            <div class="statCard__value" id="statShown">—</div>
+          </div>
+          <div class="statCard__hint">مطابق فیلتر</div>
+        </div>
+      </section>
+
+      <section class="panelCard" aria-label="لیست واکنش‌ها">
+        <div class="panelCard__head">
+          <div>
+            <h3>لیست واکنش‌ها</h3>
+            <p id="resultsHint">—</p>
+          </div>
+        </div>
+
+        <div class="tableWrap">
+          <table class="dataTable dataTable--reactions">
+            <thead>
+              <tr>
+                <th>کاربر</th>
+                <th>Reaction</th>
+                <th>Content type</th>
+                <th>Object id</th>
+                <th>تاریخ</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="reactionsTbody">
+              <tr><td colspan="6" class="loadingCell">در حال دریافت لیست واکنش‌ها...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination" id="paginationBar"></div>
+      </section>
+
+      <!-- Modal: Create/Edit Reaction -->
+      <div class="modal modal--page" id="reactionModal" aria-hidden="true">
+        <div class="modal__backdrop" data-close="1"></div>
+        <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="reactionModalTitle">
+          <div class="modal__head">
+            <div>
+              <h3 id="reactionModalTitle">—</h3>
+              <p id="reactionModalSub" class="muted">—</p>
+            </div>
+            <button class="iconBtn" id="closeReactionModalBtn" type="button" aria-label="بستن">✕</button>
+          </div>
+
+          <form id="reactionForm" class="formGrid" autocomplete="off">
+            <div id="formError" class="formError hidden"></div>
+
+            <div class="field field--span2">
+              <span>User</span>
+
+              <div class="inlineRow">
+                <input id="rUserSearch" type="search" placeholder="جستجوی username یا email..." />
+                <input id="rUserId" type="number" min="1" inputmode="numeric" placeholder="User ID" />
+              </div>
+
+              <div id="userSearchResults" class="userSearchResults hidden" role="listbox" aria-label="نتایج جستجوی کاربر"></div>
+              <small id="rUserHint" class="help">در حالت ویرایش، User ثابت است. در حالت ساخت، اگر خالی بماند ممکن است سرور کاربر جاری را ثبت کند.</small>
+            </div>
+
+            <label class="field">
+              <span>Reaction</span>
+              <input id="rReaction" type="text" maxlength="50" placeholder="مثلاً like / love / ..." />
+            </label>
+
+            <label class="field">
+              <span>Content type (ID)</span>
+              <input id="rContentType" type="number" min="1" inputmode="numeric" placeholder="مثلاً 19" />
+            </label>
+
+            <label class="field field--span2">
+              <span>Object id</span>
+              <input id="rObjectId" type="number" min="0" inputmode="numeric" placeholder="شناسه آبجکت (مثلاً Post ID)..." />
+              <small class="help">Object id باید با Content type هماهنگ باشد.</small>
+            </label>
+
+            <div class="modal__actions">
+              <button class="btn btn--ghost" id="cancelReactionBtn" type="button">انصراف</button>
+              <button class="btn btn--primary" type="submit">ذخیره</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Confirm Modal -->
+      <div class="modal" id="confirmModal" aria-hidden="true">
+        <div class="modal__backdrop" data-close="1"></div>
+        <div class="modal__dialog" role="dialog" aria-modal="true">
+          <div class="modal__head">
+            <div>
+              <h3 id="confirmTitle">تأیید</h3>
+              <p id="confirmMsg" class="muted">—</p>
+            </div>
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn--danger" id="confirmYesBtn" type="button">بله</button>
+            <button class="btn btn--ghost" id="confirmNoBtn" type="button">انصراف</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+
+    </main>
+
     <aside class="sidebar">
       <div class="brand">
         <div class="brand__logo">
@@ -40,7 +215,7 @@
             <span>Author Panel</span>
           </div>
         </div>
-        <div class="pill" style="padding:6px 10px;font-size:11px;">داشبورد</div>
+        <div class="pill" style="padding:6px 10px;font-size:11px;">واکنش‌ها</div>
       </div>
 
       <div class="userChip" title="کاربر وارد شده">
@@ -54,7 +229,7 @@
       <nav class="nav" aria-label="منوی پنل نویسنده">
         <a href="/author-panel/index.html" data-nav="index.html"><span>Dashboard</span><span class="hint">★</span></a>
         <a href="/author-panel/posts.html" data-nav="posts.html"><span>Posts</span><span class="hint">→</span></a>
-        <a href="/author-panel/author-profiles.html" data-nav="author-profiles"><span>Author profiles</span><span class="hint">→</span></a>
+        <a href="/author-panel/author-profiles.html" data-nav="author-profiles.html"><span>Author profiles</span><span class="hint">→</span></a>
         <a href="/author-panel/categories.html" data-nav="categories.html"><span>Categories</span><span class="hint">→</span></a>
         <a href="/author-panel/tags.html" data-nav="tags.html"><span>Tags</span><span class="hint">→</span></a>
         <a href="/author-panel/comments.html" data-nav="comments.html"><span>Comments</span><span class="hint">→</span></a>
@@ -72,5 +247,6 @@
   </div>
 
   <script src="/js/author-panel.js"></script>
+  <script src="/js/author-reactions.js"></script>
 </body>
 </html>
