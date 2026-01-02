@@ -154,14 +154,29 @@
     return s.slice(0, n-1) + "…";
   }
 
-  function formatDate(iso){
-    if(!iso) return "—";
+  function toFaDigits(input){
+    const map = "۰۱۲۳۴۵۶۷۸۹";
+    return String(input ?? "").replace(/\d/g, (d)=>map[d]);
+  }
+
+  function formatDate(value){
+    if(!value) return "—";
+    const s = String(value).trim();
+    if(!s) return "—";
+
+    // Backend already returns a Jalali string like: 1404/10/08 14:15:12
+    // If so, DON'T parse with Date (it would treat 1404 as Gregorian year).
+    if(/^(13|14)\d{2}\/\d{1,2}\/\d{1,2}(?:\s+\d{1,2}:\d{1,2}(?::\d{1,2})?)?$/.test(s)){
+      return toFaDigits(s);
+    }
+
+    // Otherwise try native date parsing (ISO/Gregorian)
     try{
-      const d = new Date(iso);
-      if(Number.isNaN(d.getTime())) return "—";
+      const d = new Date(s);
+      if(Number.isNaN(d.getTime())) return toFaDigits(s);
       return d.toLocaleString("fa-IR");
     }catch(_){
-      return "—";
+      return toFaDigits(s);
     }
   }
 
