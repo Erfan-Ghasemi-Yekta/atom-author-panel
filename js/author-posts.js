@@ -56,6 +56,12 @@
     // form fields
     pTitle: $("pTitle"),
     pSlug: $("pSlug"),
+    pAuthor: $("pAuthor"),
+    pEditorHint: $("pEditorHint"),
+    pPublishedDate: $("pPublishedDate"),
+    pPublishedTime: $("pPublishedTime"),
+    pScheduledDate: $("pScheduledDate"),
+    pScheduledTime: $("pScheduledTime"),
     pExcerpt: $("pExcerpt"),
     pContent: $("pContent"),
     pCategory: $("pCategory"),
@@ -96,7 +102,16 @@
 
   const nf = new Intl.NumberFormat("fa-IR");
 
+  // Convert Persian/Arabic-Indic digits to ASCII digits for reliable parsing
+  function digitsToEn(input){
+    if(input === null || input === undefined) return "";
+    return String(input)
+      .replace(/[۰-۹]/g, d => "0123456789"["۰۱۲۳۴۵۶۷۸۹".indexOf(d)])
+      .replace(/[٠-٩]/g, d => "0123456789"["٠١٢٣٤٥٦٧٨٩".indexOf(d)]);
+  }
+
   const state = {
+    me: null,
     categories: [],
     tags: [],
     series: [],
@@ -126,7 +141,8 @@
       isDirty: false,
       baseline: "",
       suspendDirty: false,
-      closeAfterSave: false
+      closeAfterSave: false,
+      isPublished: false
     }
   };
 
@@ -243,12 +259,139 @@
       .replaceAll("'","&#039;");
   }
 
-  function safeDateLabel(iso){
+
+  // --- Date normalization (handles browsers that output Jalali years in <input type="date">)
+  // Some environments may produce values like 1404-09-19. Backend expects Gregorian ISO.
+  function _div(a,b){ return ~~(a/b); }
+  function _mod(a,b){ return a - ~~(a/b)*b; }
+  const _jalaaliBreaks = [-61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178];
+
+  function _jalCal(jy){
+    const bl = _jalaaliBreaks.length;
+    const gy = jy + 621;
+    let leapJ = -14;
+    let jp = _jalaaliBreaks[0];
+    let jm = 0, jump = 0, n = 0;
+
+    if(jy < jp || jy >= _jalaaliBreaks[bl-1]) return null;
+
+    for(let i=1; i<bl; i++){
+      jm = _jalaaliBreaks[i];
+      jump = jm - jp;
+      if(jy < jm) break;
+      leapJ = leapJ + _div(jump,33)*8 + _div(_mod(jump,33),4);
+      jp = jm;
+    }
+    n = jy - jp;
+    leapJ = leapJ + _div(n,33)*8 + _div(_mod(n,33)+3,4);
+    if(_mod(jump,33) === 4 && jump - n === 4) leapJ += 1;
+
+    const leapG = _div(gy,4) - _div((_div(gy,100)+1)*3,4) - 150;
+    const march = 20 + leapJ - leapG;
+
+    if(jump - n < 6) n = n - jump + _div(jump+4,33)*33;
+    let leap = _mod(_mod(n+1,33)-1,4);
+    if(leap === -1) leap = 4;
+
+    return { leap, gy, march };
+  }
+
+  function _g2d(gy,gm,gd){
+    let d = _div((gy + _div(gm-8,6) + 100100)*1461,4)
+          + _div(153*_mod(gm+9,12)+2,5)
+          + gd - 34840408;
+    d = d - _div(_div(gy + 100100 + _div(gm-8,6),100)*3,4) + 752;
+    return d;
+  }
+
+  function _d2g(jdn){
+    let j = 4*jdn + 139361631;
+    j = j + _div(_div(4*jdn + 183187720,146097)*3,4)*4 - 3908;
+    const i = _div(_mod(j,1461),4)*5 + 308;
+    const gd = _div(_mod(i,153),5) + 1;
+    const gm = _mod(_div(i,153),12) + 1;
+    const gy = _div(j,1461) - 100100 + _div(8-gm,6);
+    return { gy, gm, gd };
+  }
+
+  function _j2d(jy,jm,jd){
+    const r = _jalCal(jy);
+    if(!r) return null;
+    return _g2d(r.gy, 3, r.march) + (jm-1)*31 - _div(jm,7)*(jm-7) + jd - 1;
+  }
+
+  function jalaliToGregorian(jy,jm,jd){
+    const jdn = _j2d(jy,jm,jd);
+    if(jdn === null) return null;
+    const g = _d2g(jdn);
+    return [g.gy, g.gm, g.gd];
+  }
+
+  function isLikelyJalaliYear(y){
+    return y >= 1300 && y <= 1600;
+  }
+
+  function normalizeDateValue(dateStr){
+    // Accept user input as:
+    // - Jalali: 1404/06/28 or 1404-06-28 (digits may be Persian/Arabic)
+    // - Gregorian: 2025-09-19 or 2025/09/19
+    // Returns Gregorian date string "YYYY-MM-DD" (latin digits) for ISO building.
+    if(!dateStr) return "";
+    const s = digitsToEn(String(dateStr)).trim();
+    const m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+    if(!m) return s;
+    const y = parseInt(m[1],10), mo = parseInt(m[2],10), d = parseInt(m[3],10);
+
+    if(isLikelyJalaliYear(y)){
+      const g = jalaliToGregorian(y, mo, d);
+      if(!g) return `${String(y).padStart(4,"0")}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+      const [gy, gm, gd] = g;
+      return `${String(gy).padStart(4,"0")}-${String(gm).padStart(2,"0")}-${String(gd).padStart(2,"0")}`;
+    }
+    return `${String(y).padStart(4,"0")}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+  }
+
+  function normalizeIsoMaybeJalali(iso){
+    // iso: usually "YYYY-MM-DDTHH:mm:ss..." (server)
+    if(!iso) return "";
+    const s = digitsToEn(iso).trim();
+    // Accept YYYY-MM-DD... or YYYY/MM/DD...
+    const m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(.*)$/);
+    if(!m) return s;
+    const y = parseInt(m[1],10), mo = parseInt(m[2],10), d = parseInt(m[3],10);
+    if(!isLikelyJalaliYear(y)) {
+      // normalize separators to '-' in date part for Date() parsing
+      return `${String(y).padStart(4,"0")}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}${m[4]}`;
+    }
+    const g = jalaliToGregorian(y, mo, d);
+    if(!g) return `${String(y).padStart(4,"0")}-${String(mo).padStart(2,"0")}-${String(d).padStart(2,"0")}${m[4]}`;
+    const [gy, gm, gd] = g;
+    return `${String(gy).padStart(4,"0")}-${String(gm).padStart(2,"0")}-${String(gd).padStart(2,"0")}${m[4]}`;
+  }
+
+  
+  function gregorianToJalaliDateStr(dateObj){
+    // Returns Jalali date as YYYY/MM/DD (latin digits) using Intl Persian calendar.
+    try{
+      const fmt = new Intl.DateTimeFormat("fa-IR-u-ca-persian", { year:"numeric", month:"2-digit", day:"2-digit" });
+      const parts = fmt.formatToParts(dateObj);
+      const y = digitsToEn(parts.find(p=>p.type==="year")?.value || "");
+      const m = digitsToEn(parts.find(p=>p.type==="month")?.value || "");
+      const d = digitsToEn(parts.find(p=>p.type==="day")?.value || "");
+      if(!y || !m || !d) return "";
+      return `${y.padStart(4,"0")}/${m.padStart(2,"0")}/${d.padStart(2,"0")}`;
+    }catch(_){
+      return "";
+    }
+  }
+
+function safeDateLabel(iso){
     if(!iso) return "—";
     try{
-      const d = new Date(iso);
+      const norm = normalizeIsoMaybeJalali(iso);
+      const d = new Date(norm);
       if (isNaN(d.getTime())) return "—";
-      return d.toLocaleString("fa-IR", { year:"numeric", month:"2-digit", day:"2-digit" });
+      return d.toLocaleString("fa-IR", { year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit" });
     }catch(_){
       return "—";
     }
@@ -295,15 +438,68 @@
 
   function toIsoStartOfDay(dateStr){
     if(!dateStr) return "";
-    const d = new Date(dateStr + "T00:00:00");
+    const norm = normalizeDateValue(dateStr);
+    const d = new Date(norm + "T00:00:00");
     if (isNaN(d.getTime())) return "";
     return d.toISOString();
   }
   function toIsoEndOfDay(dateStr){
     if(!dateStr) return "";
-    const d = new Date(dateStr + "T23:59:59");
+    const norm = normalizeDateValue(dateStr);
+    const d = new Date(norm + "T23:59:59");
     if (isNaN(d.getTime())) return "";
     return d.toISOString();
+  }
+
+
+  function isoToDateTimeParts(iso){
+    if(!iso) return {date:"", time:""};
+    try{
+      const norm = normalizeIsoMaybeJalali(iso);
+      const d = new Date(norm);
+      if(isNaN(d.getTime())) return {date:"", time:""};
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mi = String(d.getMinutes()).padStart(2,"0");
+      const jDate = gregorianToJalaliDateStr(d);
+      return {date: jDate || "", time:`${hh}:${mi}`};
+    }catch(_){ return {date:"", time:""}; }
+  }
+
+  function combineDateTimeToIso(dateStr, timeStr){
+    if(!dateStr) return "";
+    const normDate = normalizeDateValue(dateStr);
+    const t0 = digitsToEn(timeStr || "").trim();
+    const t = t0 ? String(t0).slice(0,5) : "00:00";
+    const tm = t.match(/^(\d{1,2}):(\d{2})$/);
+    const hh = tm ? parseInt(tm[1],10) : 0;
+    const mi = tm ? parseInt(tm[2],10) : 0;
+    // Build in local time to avoid browser parsing quirks
+    const dm = normDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!dm) return "";
+    const yy = parseInt(dm[1],10), mm = parseInt(dm[2],10), dd = parseInt(dm[3],10);
+    const d = new Date(yy, mm-1, dd, hh, mi, 0);
+    if(isNaN(d.getTime())) return "";
+    return d.toISOString();
+  }
+
+  function syncScheduleFieldState(){
+    const st = String(els.pStatus?.value || "");
+    const isCreate = state.editor.mode === "create";
+    const locked = (state.editor.mode === "edit" && !!state.editor.isPublished);
+    // Requirement:
+    // - create: Scheduled fields should be editable
+    // - edit + published: Scheduled fields should NOT be editable
+    // - edit + others: editable only when status is scheduled
+    const enable = !locked && (isCreate || st === "scheduled");
+
+    if(els.pScheduledDate) els.pScheduledDate.disabled = !enable;
+    if(els.pScheduledTime) els.pScheduledTime.disabled = !enable;
+  }
+
+  function syncPublishedFieldState(){
+    const locked = (state.editor.mode === "edit" && !!state.editor.isPublished);
+    if(els.pPublishedDate) els.pPublishedDate.disabled = locked;
+    if(els.pPublishedTime) els.pPublishedTime.disabled = locked;
   }
 
   function buildListQuery(){
@@ -455,7 +651,10 @@
         </td>
         <td><span class="badge ${statusClass(p.status)}">${escapeHtml(statusLabel(p.status))}</span></td>
         <td><span class="badge badge--muted">${escapeHtml(visibilityLabel(p.visibility))}</span></td>
-        <td>${escapeHtml(safeDateLabel(p.published_at))}</td>
+        <td>
+          ${escapeHtml(safeDateLabel(p.published_at))}
+          ${p.status === "published" && p.author ? `<div class="muted">نویسنده: ${escapeHtml(p.author.display_name || p.author.full_name || p.author.username || p.author.email || "—")}</div>` : ``}
+        </td>
         <td class="num">${nf.format(p.views_count || 0)}</td>
         <td class="num">${nf.format(p.likes_count || 0)}</td>
         <td class="actions">
@@ -661,6 +860,7 @@
     if(!CONFIG?.ME_ENDPOINT) return;
     try{
       const me = await apiFetch(CONFIG.ME_ENDPOINT);
+      state.me = me;
       const name = me?.full_name || me?.username || me?.email || "نویسنده";
       if(els.userNameTop) els.userNameTop.textContent = name;
       if(els.userRoleTop) els.userRoleTop.textContent = "مدیریت پست‌ها";
@@ -742,7 +942,13 @@
 
   function resetPostForm(){
     if(els.postForm) els.postForm.reset();
+    if(els.pAuthor) els.pAuthor.value = "";
+    if(els.pPublishedDate) els.pPublishedDate.value = "";
+    if(els.pPublishedTime) els.pPublishedTime.value = "";
+    if(els.pScheduledDate) els.pScheduledDate.value = "";
+    if(els.pScheduledTime) els.pScheduledTime.value = "";
     state.editor.selectedTagIds = new Set();
+    state.editor.isPublished = false;
     if(els.pSlug){
       els.pSlug.disabled = false;
       els.pSlug.placeholder = "اختیاری — اگر خالی باشد سرور می‌سازد";
@@ -771,6 +977,8 @@
       seoTitle: String(els.pSeoTitle?.value || ""),
       seoDesc: String(els.pSeoDesc?.value || ""),
       canonical: String(els.pCanonical?.value || ""),
+      scheduledDate: String(els.pScheduledDate?.value || ""),
+      scheduledTime: String(els.pScheduledTime?.value || ""),
       coverMediaId: String(els.pCoverMediaId?.value || ""),
       ogImageId: String(els.pOgImageId?.value || ""),
       tagIds: Array.from(state.editor.selectedTagIds.values()).sort((a,b)=>a-b)
@@ -806,6 +1014,25 @@
     state.editor.closeAfterSave = false;
     state.editor.slug = null;
     resetPostForm();
+    // Author is NOT editable — show current admin (creator)
+    const meId = state.me?.id ?? state.me?.user_id ?? state.me?.pk ?? "";
+    const meName = state.me?.full_name || state.me?.display_name || state.me?.username || state.me?.email || "—";
+    if(els.pAuthor) els.pAuthor.value = meId ? `#${meId} — ${meName}` : meName;
+    if(els.pEditorHint) els.pEditorHint.textContent = meId ? `در حال ساخت با اکانت: #${meId}` : `در حال ساخت با اکانت فعلی`;
+
+    // On create: Author is locked, but Published/Scheduled should be editable (Jalali input)
+    const now = new Date();
+    const jalaliToday = gregorianToJalaliDateStr(now);
+    const hh = String(now.getHours()).padStart(2,"0");
+    const mi = String(now.getMinutes()).padStart(2,"0");
+    if(els.pPublishedDate) els.pPublishedDate.value = jalaliToday || "";
+    if(els.pPublishedTime) els.pPublishedTime.value = `${hh}:${mi}`;
+    if(els.pScheduledDate) els.pScheduledDate.value = jalaliToday || "";
+    if(els.pScheduledTime) els.pScheduledTime.value = `${hh}:${mi}`;
+
+    // unlock date fields
+    syncPublishedFieldState();
+      syncScheduleFieldState();
     if(els.postModalTitle) els.postModalTitle.textContent = "ساخت پست جدید";
     if(els.postModalSub) els.postModalSub.textContent = "اطلاعات را وارد کن و ذخیره بزن.";
     openModal(els.postModal);
@@ -842,6 +1069,9 @@
     try{
       if(els.formError){ els.formError.classList.add("hidden"); els.formError.textContent=""; }
       const detail = await apiFetch(`/api/blog/posts/${encodeURIComponent(slug)}/`);
+      state.editor.isPublished = (detail?.status === "published" || !!detail?.published_at);
+      const editorId = state.me?.id ?? state.me?.user_id ?? state.me?.pk ?? "";
+      if(els.pEditorHint) els.pEditorHint.textContent = editorId ? `در حال ویرایش با اکانت: #${editorId}` : `در حال ویرایش با اکانت فعلی`;
       // populate
       if(els.pTitle) els.pTitle.value = detail.title || "";
       if(els.pExcerpt) els.pExcerpt.value = detail.excerpt || "";
@@ -852,6 +1082,21 @@
       if(els.pSeoTitle) els.pSeoTitle.value = detail.seo_title || "";
       if(els.pSeoDesc) els.pSeoDesc.value = detail.seo_description || "";
       if(els.pCanonical) els.pCanonical.value = detail.canonical_url || "";
+
+      // Author + dates (read-only display)
+      if(els.pAuthor){
+        const a = detail.author;
+        els.pAuthor.value = a?.display_name || a?.full_name || a?.username || a?.email || "—";
+      }
+      const pub = isoToDateTimeParts(detail.published_at);
+      if(els.pPublishedDate) els.pPublishedDate.value = pub.date;
+      if(els.pPublishedTime) els.pPublishedTime.value = pub.time;
+
+      const sch = isoToDateTimeParts(detail.scheduled_at);
+      if(els.pScheduledDate) els.pScheduledDate.value = sch.date;
+      if(els.pScheduledTime) els.pScheduledTime.value = sch.time;
+      syncPublishedFieldState();
+      syncScheduleFieldState();
 
       // category: API returns a string. Try match by slug or name.
       const c = state.categories.find(x => x.slug === detail.category) || state.categories.find(x => x.name === detail.category);
@@ -992,6 +1237,18 @@
       tag_ids: getSelectedTagIds(),
       series: seriesVal || null
     };
+
+    // Optional scheduling (only if API supports it)
+    if(status === "scheduled"){
+      const sIso = combineDateTimeToIso(String(els.pScheduledDate?.value || ""), String(els.pScheduledTime?.value || ""));
+      if(sIso && !(state.editor.mode === "edit" && state.editor.isPublished)) payload.scheduled_at = sIso;
+    }
+
+    // Published at: editable فقط در حالت ساخت (و در ادیتِ پست غیرمنتشر شده)
+    const pIso = combineDateTimeToIso(String(els.pPublishedDate?.value || ""), String(els.pPublishedTime?.value || ""));
+    if(pIso && (state.editor.mode === "create" || !state.editor.isPublished)){
+      payload.published_at = pIso;
+    }
 
     if(seo_title) payload.seo_title = seo_title;
     if(seo_description) payload.seo_description = seo_description;
@@ -1278,6 +1535,12 @@ function bindEvents(){
       els.postForm.addEventListener("input", recomputeDirty);
       els.postForm.addEventListener("change", recomputeDirty);
     }
+
+    if(els.pStatus) els.pStatus.addEventListener("change", ()=>{
+      syncPublishedFieldState();
+      syncScheduleFieldState();
+      recomputeDirty();
+    });
 
     // tags selection
     if(els.tagsGrid){

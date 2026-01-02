@@ -253,6 +253,30 @@
             </label>
 
             <label class="field">
+              <span>Author</span>
+              <input id="pAuthor" type="text" placeholder="—" disabled />
+            
+              <small id="pEditorHint" class="help muted"></small>
+            </label>
+
+            <label class="field">
+              <span>Published at</span>
+              <div class="inlineRow">
+                <input id="pPublishedDate" type="text" inputmode="numeric" dir="ltr" placeholder="1404/06/28" />
+                <input id="pPublishedTime" type="time" />
+              </div>
+            </label>
+
+            <label class="field">
+              <span>Scheduled at</span>
+              <div class="inlineRow">
+                <input id="pScheduledDate" type="text" inputmode="numeric" dir="ltr" placeholder="1404/06/28" />
+                <input id="pScheduledTime" type="time" />
+              </div>
+              <small class="help">اگر Status روی Scheduled باشد، این مقدار به سرور ارسال می‌شود (در صورت پشتیبانی API).</small>
+            </label>
+
+            <label class="field">
               <span>دسته</span>
               <select id="pCategory"></select>
             </label>
