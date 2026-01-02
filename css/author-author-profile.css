@@ -236,6 +236,21 @@
   color: var(--text);
 }
 
+
+/* actions cell: keep table borders intact */
+.dataTable td.actions{
+  display: table-cell !important;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.dataTable td.actions .btn{
+  margin-inline-start: 8px;
+}
+
+.dataTable td.actions .btn:first-child{
+  margin-inline-start: 0;
+}
 .dataTable tbody tr:hover td{
   background: rgba(255,255,255,.02);
 }
@@ -297,34 +312,6 @@
   text-decoration: none;
 }
 .avatarCell a:hover{ text-decoration: underline; }
-
-.actions{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  justify-content:flex-start;
-  white-space: nowrap;
-}
-
-/* --- FIX: do NOT make <td> a flex container (breaks table borders) --- */
-/* When <td class="actions"> becomes display:flex, some browsers stop treating
-   it like a real table-cell, causing the row separator line to look "broken".
-   Force it back to table-cell and do spacing on the buttons instead. */
-.dataTable td.actions{
-  display: table-cell !important;
-  white-space: nowrap;
-  min-width: 180px;
-}
-
-/* spacing between buttons (RTL-friendly) */
-.dataTable td.actions .btn{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 8px;
-  margin-bottom: 6px;
-}
-.dataTable td.actions .btn:last-child{ margin-left: 0; }
 
 .pagination{
   display:flex;
@@ -532,6 +519,16 @@
   display:grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
+}
+
+.mediaFooter{
+  display:flex;
+  justify-content:center;
+  margin-top: 12px;
+}
+
+.mediaFooter .btn{
+  min-width: 140px;
 }
 @media (max-width: 1100px){
   .mediaGrid{ grid-template-columns: repeat(4, minmax(0, 1fr)); }
