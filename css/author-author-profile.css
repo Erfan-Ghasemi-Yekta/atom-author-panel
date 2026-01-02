@@ -306,6 +306,26 @@
   white-space: nowrap;
 }
 
+/* --- FIX: do NOT make <td> a flex container (breaks table borders) --- */
+/* When <td class="actions"> becomes display:flex, some browsers stop treating
+   it like a real table-cell, causing the row separator line to look "broken".
+   Force it back to table-cell and do spacing on the buttons instead. */
+.dataTable td.actions{
+  display: table-cell !important;
+  white-space: nowrap;
+  min-width: 180px;
+}
+
+/* spacing between buttons (RTL-friendly) */
+.dataTable td.actions .btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  margin-bottom: 6px;
+}
+.dataTable td.actions .btn:last-child{ margin-left: 0; }
+
 .pagination{
   display:flex;
   gap: 8px;
