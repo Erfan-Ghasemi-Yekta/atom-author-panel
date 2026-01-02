@@ -10,27 +10,213 @@
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/css/author-panel.css" />
+  <link rel="stylesheet" href="/css/author-author-profile.css" />
 </head>
 <body>
   <div class="container">
-    
-<main class="main">
-  <div class="topbar">
-    <div class="topbar__title">
-      <h1>Author profiles</h1>
-      <p>مدیریت پروفایل‌های نویسنده (فعلاً اسکلت).</p>
-    </div>
-    <div class="pill">پنل نویسنده</div>
-  </div>
 
-  <div class="placeholder">
-    محتوای این صفحه فعلاً ساخته نشده.
-    <br/>
-    وقتی گفتی، همین بخش را به API وصل می‌کنیم و جدول/فرم‌ها را می‌سازیم.
-  </div>
-</main>
+    <main class="main">
+      <div class="mainHeader">
+        <div class="headerUser" title="کاربر وارد شده">
+          <div class="headerUser__avatar" id="userAvatarTop">AT</div>
+          <div class="headerUser__meta">
+            <b id="userNameTop">نویسنده</b>
+            <small id="userRoleTop">مدیریت پروفایل نویسندگان</small>
+          </div>
+        </div>
 
-    
+        <div class="headerActions">
+          <button class="btn btn--primary" id="newAuthorBtn" type="button">نویسنده جدید</button>
+          <button class="btn" id="refreshAuthorsBtn" type="button">به‌روزرسانی</button>
+          <div class="pill">Author profiles</div>
+        </div>
+      </div>
+
+      <section class="hero hero--compact" aria-label="معرفی">
+        <div class="heroTop">
+          <div class="heroTitle">
+            <h2>مدیریت پروفایل نویسندگان</h2>
+            <p>ساخت/ویرایش پروفایل نویسنده با فیلدهای User، Display name، Bio و Avatar.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panelCard" aria-label="فیلتر و جستجو">
+        <div class="panelCard__head">
+          <div>
+            <h3>جستجو</h3>
+            <p>جستجو روی Display name، Bio و اطلاعات کاربر اعمال می‌شود.</p>
+          </div>
+          <div class="chipRow" id="activeFilters"></div>
+        </div>
+
+        <form id="filtersForm" class="filters filters--authors" autocomplete="off">
+          <label class="field field--span2">
+            <span>جستجو</span>
+            <input id="fSearch" type="search" placeholder="Display name، Bio، username یا #user id..." />
+          </label>
+
+          <label class="field">
+            <span>تعداد در صفحه</span>
+            <select id="fPageSize">
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+            </select>
+          </label>
+
+          <div class="filterActions">
+            <button class="btn btn--primary" id="applyFiltersBtn" type="button">اعمال</button>
+            <button class="btn btn--ghost" id="resetFiltersBtn" type="button">پاک کردن</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="statRow statRow--authors" aria-label="آمار">
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">کل</div>
+            <div class="statCard__value" id="statTotal">—</div>
+          </div>
+          <div class="statCard__hint">تعداد کل پروفایل‌ها</div>
+        </div>
+
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">نمایش</div>
+            <div class="statCard__value" id="statShown">—</div>
+          </div>
+          <div class="statCard__hint">مطابق فیلتر</div>
+        </div>
+      </section>
+
+      <section class="panelCard" aria-label="لیست نویسندگان">
+        <div class="panelCard__head">
+          <div>
+            <h3>لیست پروفایل‌ها</h3>
+            <p id="resultsHint">—</p>
+          </div>
+        </div>
+
+        <div class="tableWrap">
+          <table class="dataTable dataTable--authors">
+            <thead>
+              <tr>
+                <th>کاربر</th>
+                <th>Display name</th>
+                <th>Bio</th>
+                <th>Avatar</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="authorsTbody">
+              <tr><td colspan="5" class="loadingCell">در حال دریافت لیست نویسندگان...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination" id="paginationBar"></div>
+      </section>
+
+      <!-- Modal: Create/Edit Author -->
+      <div class="modal modal--page" id="authorModal" aria-hidden="true">
+        <div class="modal__backdrop" data-close="1"></div>
+        <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="authorModalTitle">
+          <div class="modal__head">
+            <div>
+              <h3 id="authorModalTitle">—</h3>
+              <p id="authorModalSub" class="muted">—</p>
+            </div>
+            <button class="iconBtn" id="closeAuthorModalBtn" type="button" aria-label="بستن">✕</button>
+          </div>
+
+          <form id="authorForm" class="formGrid" autocomplete="off">
+            <div id="formError" class="formError hidden"></div>
+
+            <div class="field field--span2">
+              <span>User</span>
+
+              <div class="inlineRow">
+                <input id="aUserSearch" type="search" placeholder="جستجوی username یا email..." />
+                <input id="aUserId" type="number" min="1" inputmode="numeric" placeholder="User ID" />
+              </div>
+
+              <div id="userSearchResults" class="userSearchResults hidden" role="listbox" aria-label="نتایج جستجوی کاربر"></div>
+              <small id="aUserHint" class="help">برای ساخت پروفایل، User ID الزامی است. در حالت ویرایش، User ثابت است.</small>
+            </div>
+
+            <label class="field">
+              <span>Display name</span>
+              <input id="aDisplayName" type="text" placeholder="نام نمایشی..." />
+            </label>
+
+            <label class="field field--span2">
+              <span>Bio</span>
+              <textarea id="aBio" rows="5" placeholder="بیوگرافی نویسنده..."></textarea>
+            </label>
+
+            <div class="field field--span2">
+              <span>Avatar (Media ID)</span>
+              <div class="inlineRow">
+                <input id="aAvatarId" type="number" min="1" inputmode="numeric" placeholder="مثلاً 12 (اختیاری)" />
+                <button class="btn btn--small" type="button" id="pickAvatarBtn">انتخاب</button>
+                <button class="btn btn--small btn--ghost" type="button" id="clearAvatarBtn">پاک کردن</button>
+              </div>
+
+              <div class="avatarPreview" id="avatarPreview" aria-label="پیش‌نمایش آواتار"></div>
+              <small class="help">آواتار به صورت Media ID ذخیره می‌شود.</small>
+            </div>
+
+            <div class="modal__actions">
+              <button class="btn btn--ghost" id="cancelAuthorBtn" type="button">انصراف</button>
+              <button class="btn btn--primary" type="submit">ذخیره</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Media Picker Modal -->
+      <div class="modal" id="mediaPickerModal" aria-hidden="true">
+        <div class="modal__backdrop" data-close="1"></div>
+        <div class="modal__dialog modal__dialog--wide" role="dialog" aria-modal="true">
+          <div class="modal__head">
+            <div>
+              <h3 id="mediaPickerTitle">انتخاب آواتار</h3>
+              <p class="muted">فقط تصاویر نمایش داده می‌شوند.</p>
+            </div>
+            <button class="iconBtn" id="closeMediaPickerBtn" type="button" aria-label="بستن">✕</button>
+          </div>
+
+          <div class="mediaToolbar">
+            <input id="mediaSearch" type="search" placeholder="جستجوی رسانه..." />
+            <button class="btn btn--small" id="mediaLoadMoreBtn" type="button">بیشتر</button>
+          </div>
+
+          <div class="mediaGrid" id="mediaGrid"></div>
+        </div>
+      </div>
+
+      <!-- Confirm Modal -->
+      <div class="modal" id="confirmModal" aria-hidden="true">
+        <div class="modal__backdrop" data-close="1"></div>
+        <div class="modal__dialog" role="dialog" aria-modal="true">
+          <div class="modal__head">
+            <div>
+              <h3 id="confirmTitle">تأیید</h3>
+              <p id="confirmMsg" class="muted">—</p>
+            </div>
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn--danger" id="confirmYesBtn" type="button">بله</button>
+            <button class="btn btn--ghost" id="confirmNoBtn" type="button">انصراف</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+
+    </main>
+
     <aside class="sidebar">
       <div class="brand">
         <div class="brand__logo">
@@ -40,7 +226,7 @@
             <span>Author Panel</span>
           </div>
         </div>
-        <div class="pill" style="padding:6px 10px;font-size:11px;">داشبورد</div>
+        <div class="pill" style="padding:6px 10px;font-size:11px;">نویسندگان</div>
       </div>
 
       <div class="userChip" title="کاربر وارد شده">
@@ -54,7 +240,7 @@
       <nav class="nav" aria-label="منوی پنل نویسنده">
         <a href="/author-panel/index.html" data-nav="index.html"><span>Dashboard</span><span class="hint">★</span></a>
         <a href="/author-panel/posts.html" data-nav="posts.html"><span>Posts</span><span class="hint">→</span></a>
-        <a href="/author-panel/author-profiles.html" data-nav="author-profiles"><span>Author profiles</span><span class="hint">→</span></a>
+        <a href="/author-panel/author-profiles.html" data-nav="author-profiles.html"><span>Author profiles</span><span class="hint">→</span></a>
         <a href="/author-panel/categories.html" data-nav="categories.html"><span>Categories</span><span class="hint">→</span></a>
         <a href="/author-panel/tags.html" data-nav="tags.html"><span>Tags</span><span class="hint">→</span></a>
         <a href="/author-panel/comments.html" data-nav="comments.html"><span>Comments</span><span class="hint">→</span></a>
@@ -72,5 +258,6 @@
   </div>
 
   <script src="/js/author-panel.js"></script>
+  <script src="/js/author-author-profile.js"></script>
 </body>
 </html>
