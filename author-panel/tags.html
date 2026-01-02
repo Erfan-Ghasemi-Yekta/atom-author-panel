@@ -10,27 +10,174 @@
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="/css/author-panel.css" />
+  <link rel="stylesheet" href="/css/author-tags.css" />
 </head>
 <body>
   <div class="container">
-    
-<main class="main">
-  <div class="topbar">
-    <div class="topbar__title">
-      <h1>Tags</h1>
-      <p>مدیریت تگ‌ها (فعلاً اسکلت).</p>
-    </div>
-    <div class="pill">پنل نویسنده</div>
-  </div>
 
-  <div class="placeholder">
-    محتوای این صفحه فعلاً ساخته نشده.
-    <br/>
-    وقتی گفتی، همین بخش را به API وصل می‌کنیم و جدول/فرم‌ها را می‌سازیم.
-  </div>
-</main>
+    <main class="main">
 
-    
+      <div class="mainHeader">
+        <div class="headerUser" title="کاربر وارد شده">
+          <div class="headerUser__avatar" id="userAvatarTop">AT</div>
+          <div class="headerUser__meta">
+            <b id="userNameTop">نویسنده</b>
+            <small id="userRoleTop">مدیریت تگ‌ها</small>
+          </div>
+        </div>
+
+        <div class="headerActions">
+          <button class="btn btn--primary" id="newTagBtn" type="button">تگ جدید</button>
+          <button class="btn" id="refreshTagsBtn" type="button">به‌روزرسانی</button>
+          <div class="pill">Tags</div>
+        </div>
+      </div>
+
+      <section class="hero hero--compact" aria-label="معرفی">
+        <div class="heroTop">
+          <div class="heroTitle">
+            <h2>مدیریت تگ‌ها</h2>
+            <p>ساخت/ویرایش/حذف تگ‌ها با فیلدهای Slug، Name و Description.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panelCard" aria-label="فیلتر و جستجو">
+        <div class="panelCard__head">
+          <div>
+            <h3>جستجو</h3>
+            <p>جستجو روی Name، Slug و Description اعمال می‌شود.</p>
+          </div>
+          <div class="chipRow" id="activeFilters"></div>
+        </div>
+
+        <form id="filtersForm" class="filters filters--tags" autocomplete="off">
+          <label class="field field--span2">
+            <span>جستجو</span>
+            <input id="fSearch" type="search" placeholder="نام، اسلاگ یا توضیحات..." />
+          </label>
+
+          <label class="field">
+            <span>تعداد در صفحه</span>
+            <select id="fPageSize">
+              <option value="10">10</option>
+              <option value="20" selected>20</option>
+              <option value="50">50</option>
+            </select>
+          </label>
+
+          <div class="filterActions">
+            <button class="btn btn--primary" id="applyFiltersBtn" type="button">اعمال</button>
+            <button class="btn btn--ghost" id="resetFiltersBtn" type="button">پاک کردن</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="statRow statRow--tags" aria-label="آمار">
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">کل</div>
+            <div class="statCard__value" id="statTotal">—</div>
+          </div>
+          <div class="statCard__hint">تعداد کل تگ‌ها</div>
+        </div>
+
+        <div class="statCard">
+          <div class="statCard__top">
+            <div class="statCard__label">نمایش</div>
+            <div class="statCard__value" id="statShown">—</div>
+          </div>
+          <div class="statCard__hint">مطابق فیلتر</div>
+        </div>
+      </section>
+
+      <section class="panelCard" aria-label="لیست تگ‌ها">
+        <div class="panelCard__head">
+          <div>
+            <h3>لیست تگ‌ها</h3>
+            <p id="resultsHint">—</p>
+          </div>
+        </div>
+
+        <div class="tableWrap">
+          <table class="dataTable dataTable--tags">
+            <thead>
+              <tr>
+                <th>Slug</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="tagsTbody">
+              <tr><td colspan="4" class="loadingCell">در حال دریافت لیست تگ‌ها...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pagination" id="paginationBar"></div>
+      </section>
+
+      <!-- Modal: Create/Edit Tag -->
+      <div class="modal modal--page" id="tagModal" aria-hidden="true">
+        <div class="modal__backdrop" data-close="1"></div>
+        <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="tagModalTitle">
+          <div class="modal__head">
+            <div>
+              <h3 id="tagModalTitle">—</h3>
+              <p id="tagModalSub" class="muted">—</p>
+            </div>
+            <button class="iconBtn" id="closeTagModalBtn" type="button" aria-label="بستن">✕</button>
+          </div>
+
+          <form id="tagForm" class="formGrid" autocomplete="off">
+            <div id="formError" class="formError hidden"></div>
+
+            <label class="field">
+              <span>Slug</span>
+              <input id="tSlug" type="text" dir="ltr" placeholder="مثلاً esports" />
+              <small class="help">الگو: فقط حروف/عدد/خط تیره/آندرلاین — حداکثر 50 کاراکتر.</small>
+            </label>
+
+            <label class="field">
+              <span>Name</span>
+              <input id="tName" type="text" placeholder="نام تگ..." />
+            </label>
+
+            <label class="field field--span2">
+              <span>Description</span>
+              <textarea id="tDescription" rows="5" placeholder="توضیحات (اختیاری)..."></textarea>
+            </label>
+
+            <div class="modal__actions">
+              <button class="btn btn--ghost" id="cancelTagBtn" type="button">انصراف</button>
+              <button class="btn btn--primary" type="submit">ذخیره</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Confirm Modal -->
+      <div class="modal" id="confirmModal" aria-hidden="true">
+        <div class="modal__backdrop" data-close="1"></div>
+        <div class="modal__dialog" role="dialog" aria-modal="true">
+          <div class="modal__head">
+            <div>
+              <h3 id="confirmTitle">تأیید</h3>
+              <p id="confirmMsg" class="muted">—</p>
+            </div>
+          </div>
+          <div class="modal__actions">
+            <button class="btn btn--danger" id="confirmYesBtn" type="button">بله</button>
+            <button class="btn btn--ghost" id="confirmNoBtn" type="button">انصراف</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"></div>
+
+    </main>
+
     <aside class="sidebar">
       <div class="brand">
         <div class="brand__logo">
@@ -40,7 +187,7 @@
             <span>Author Panel</span>
           </div>
         </div>
-        <div class="pill" style="padding:6px 10px;font-size:11px;">داشبورد</div>
+        <div class="pill" style="padding:6px 10px;font-size:11px;">تگ‌ها</div>
       </div>
 
       <div class="userChip" title="کاربر وارد شده">
@@ -54,7 +201,7 @@
       <nav class="nav" aria-label="منوی پنل نویسنده">
         <a href="/author-panel/index.html" data-nav="index.html"><span>Dashboard</span><span class="hint">★</span></a>
         <a href="/author-panel/posts.html" data-nav="posts.html"><span>Posts</span><span class="hint">→</span></a>
-        <a href="/author-panel/author-profiles.html" data-nav="author-profiles"><span>Author profiles</span><span class="hint">→</span></a>
+        <a href="/author-panel/author-profiles.html" data-nav="author-profiles.html"><span>Author profiles</span><span class="hint">→</span></a>
         <a href="/author-panel/categories.html" data-nav="categories.html"><span>Categories</span><span class="hint">→</span></a>
         <a href="/author-panel/tags.html" data-nav="tags.html"><span>Tags</span><span class="hint">→</span></a>
         <a href="/author-panel/comments.html" data-nav="comments.html"><span>Comments</span><span class="hint">→</span></a>
@@ -72,5 +219,6 @@
   </div>
 
   <script src="/js/author-panel.js"></script>
+  <script src="/js/author-tags.js"></script>
 </body>
 </html>
