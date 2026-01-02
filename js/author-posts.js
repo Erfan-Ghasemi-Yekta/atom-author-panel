@@ -110,6 +110,9 @@
       .replace(/[٠-٩]/g, d => "0123456789"["٠١٢٣٤٥٦٧٨٩".indexOf(d)]);
   }
 
+  const visibilityCache = new Map();
+  const visibilityInflight = new Set();
+
   const state = {
     me: null,
     categories: [],
@@ -419,10 +422,85 @@ function safeDateLabel(iso){
     return map[s] || "badge--muted";
   }
 
-  function visibilityLabel(v){
-    const map = { public:"عمومی", private:"خصوصی", unlisted:"غیرلیست‌شده" };
-    return map[v] || (v || "—");
+  function normalizeVisibilityValue(v){
+    if(v === null || v === undefined) return "";
+
+    // object forms (e.g. {value:"public"})
+    if(typeof v === "object"){
+      const cand = v?.value ?? v?.key ?? v?.code ?? v?.name ?? v?.slug;
+      if(cand !== undefined) return normalizeVisibilityValue(cand);
+      return "";
+    }
+
+    // boolean forms
+    if(typeof v === "boolean"){
+      return v ? "public" : "private";
+    }
+
+    // numeric forms (0/1/2)
+    if(typeof v === "number"){
+      if(v === 0) return "public";
+      if(v === 1) return "private";
+      if(v === 2) return "unlisted";
+      return String(v);
+    }
+
+    const s = String(v).trim();
+    if(!s) return "";
+
+    // placeholders
+    if(s === "-" || s === "—" || s === "–") return "";
+    const t = s.toLowerCase();
+    if(t === "null" || t === "none" || t === "undefined") return "";
+
+    // numeric-as-string
+    if(t === "0") return "public";
+    if(t === "1") return "private";
+    if(t === "2") return "unlisted";
+
+    // persian labels from backend (if any)
+    if(s.includes("عمومی")) return "public";
+    if(s.includes("خصوصی")) return "private";
+    if(s.includes("غیرلیست") || s.includes("غيرليست") || s.includes("غیر لیست") || s.includes("غير ليست")) return "unlisted";
+
+    // common variants
+    if(["public","pub","open"].includes(t)) return "public";
+    if(["private","priv","closed"].includes(t)) return "private";
+    if(["unlisted","un_listed","not_listed","not-listed","hidden"].includes(t)) return "unlisted";
+
+    return t;
   }
+
+  function resolveVisibilityFromPost(p){
+    if(!p) return "";
+    const direct = p.visibility ?? p.visibility_status ?? p.visibility_type ?? p.privacy ?? p.privacy_status ?? p.access ?? p.access_level ?? p.share_mode;
+    const nv = normalizeVisibilityValue(direct);
+    if(nv) return nv;
+
+    // boolean flags
+    if(p.is_public === true || p.public === true) return "public";
+    if(p.is_private === true || p.private === true) return "private";
+    if(p.is_unlisted === true || p.unlisted === true) return "unlisted";
+
+    // listed flag
+    if(p.listed === false) return "unlisted";
+    if(p.listed === true) return "public";
+
+    return "";
+  }
+
+  function visibilityLabel(v){
+    const vv = normalizeVisibilityValue(v);
+    const map = { public:"عمومی", private:"خصوصی", unlisted:"غیرلیست‌شده" };
+    return map[vv] || (vv || "—");
+  }
+
+  function visibilityClass(v){
+    const vv = normalizeVisibilityValue(v);
+    const map = { public:"badge--public", private:"badge--private", unlisted:"badge--unlisted" };
+    return map[vv] || "badge--muted";
+  }
+
 
   function slugify(value){
     const s = String(value || "").trim().toLowerCase();
@@ -650,7 +728,7 @@ function safeDateLabel(iso){
           </div>
         </td>
         <td><span class="badge ${statusClass(p.status)}">${escapeHtml(statusLabel(p.status))}</span></td>
-        <td><span class="badge badge--muted">${escapeHtml(visibilityLabel(p.visibility))}</span></td>
+        <td><span class="badge ${visibilityClass(resolveVisibilityFromPost(p))}" data-vis-slug="${escapeHtml(p.slug)}">${escapeHtml(visibilityLabel(resolveVisibilityFromPost(p)))}</span></td>
         <td class="hotCol">
           ${p.is_hot ? `<span class="hotMark hotMark--yes" title="اخبار داغ" aria-label="اخبار داغ">✓</span>` : `<span class="hotMark hotMark--no" title="اخبار داغ نیست" aria-label="اخبار داغ نیست">✕</span>`}
         </td>
@@ -668,6 +746,9 @@ function safeDateLabel(iso){
       `;
       els.postsTbody.appendChild(tr);
     }
+
+    // تکمیل ستون «نمایش» وقتی لیست API فیلد visibility را برنگرداند
+    prefetchVisibilityDetails(pageItems);
   }
 
   function renderPagination(){
@@ -731,6 +812,81 @@ function safeDateLabel(iso){
     toast._t = setTimeout(()=>{ els.toast.className = "toast"; }, 3200);
   }
 
+
+  function cssEscapeSel(value){
+    try{
+      if(window.CSS && typeof window.CSS.escape === "function") return window.CSS.escape(String(value));
+    }catch(_){}
+    // basic fallback
+    return String(value).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+  }
+
+  function updateVisibilityBadge(slug, visibility){
+    // Avoid fragile CSS escaping by matching attribute values directly
+    const nodes = document.querySelectorAll("[data-vis-slug]");
+    for(const el of nodes){
+      if(el.getAttribute("data-vis-slug") === String(slug)){
+        el.textContent = visibilityLabel(visibility);
+        el.className = `badge ${visibilityClass(visibility)}`;
+      }
+    }
+  }
+
+  async function prefetchVisibilityDetails(pageItems){
+    if(!Array.isArray(pageItems) || !pageItems.length) return;
+
+    const need = [];
+    for(const p of pageItems){
+      const slug = p?.slug;
+      if(!slug) continue;
+
+      const current = resolveVisibilityFromPost(p);
+      if(current){
+        // ensure cache + UI consistent
+        visibilityCache.set(slug, current);
+        continue;
+      }
+      if(visibilityCache.has(slug)){
+        updateVisibilityBadge(slug, visibilityCache.get(slug));
+        continue;
+      }
+      if(!visibilityInflight.has(slug)){
+        need.push(slug);
+      }
+    }
+
+    if(!need.length) return;
+
+    // simple concurrency (max 3)
+    const max = 3;
+    let idx = 0;
+
+    const worker = async ()=>{
+      while(idx < need.length){
+        const slug = need[idx++];
+        visibilityInflight.add(slug);
+        try{
+          const detail = await apiFetch(`/api/blog/posts/${encodeURIComponent(slug)}/`);
+          const v = resolveVisibilityFromPost(detail) || resolveVisibilityFromPost(detail?.data) || normalizeVisibilityValue(detail?.visibility);
+          if(v){
+            visibilityCache.set(slug, v);
+            // also patch in-memory post object for next renders
+            const postObj = (state.posts || []).find(x => x.slug === slug);
+            if(postObj) postObj.visibility = v;
+            updateVisibilityBadge(slug, v);
+          }
+        }catch(_){
+          // ignore; keep dash
+        }finally{
+          visibilityInflight.delete(slug);
+        }
+      }
+    };
+
+    const workers = [];
+    for(let i=0;i<Math.min(max, need.length);i++) workers.push(worker());
+    await Promise.all(workers);
+  }
 
   function syncBodyModalOpen(){
     // Keep body scroll locked if ANY modal is open
