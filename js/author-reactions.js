@@ -288,8 +288,66 @@
     if(els.statShown) els.statShown.textContent = nf.format(state.filtered.length);
   }
 
+
+  const faMonths = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
+  const faNums = "۰۱۲۳۴۵۶۷۸۹";
+  const arNums = "٠١٢٣٤٥٦٧٨٩";
+
+  function toFaDigits(input){
+    return String(input ?? "").replace(/\d/g, d => faNums[d] ?? d);
+  }
+
+  function faToEnDigits(input){
+    return String(input ?? "")
+      .replace(/[۰-۹]/g, d => String(faNums.indexOf(d)))
+      .replace(/[٠-٩]/g, d => String(arNums.indexOf(d)));
+  }
+
+  function parseJalaliDateTime(str){
+    const s = faToEnDigits(str).trim();
+    const m = /^(\d{4})\/(\d{1,2})\/(\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(s);
+    if(!m) return null;
+
+    const jy = Number(m[1]);
+    const jm = Number(m[2]);
+    const jd = Number(m[3]);
+
+    if(!(jy > 0 && jm >= 1 && jm <= 12 && jd >= 1 && jd <= 31)) return null;
+
+    const hh = (m[4] !== undefined) ? Number(m[4]) : null;
+    const mm = (m[5] !== undefined) ? Number(m[5]) : null;
+    const ss = (m[6] !== undefined) ? Number(m[6]) : null;
+
+    if(hh !== null && !(hh >= 0 && hh <= 23)) return null;
+    if(mm !== null && !(mm >= 0 && mm <= 59)) return null;
+    if(ss !== null && !(ss >= 0 && ss <= 59)) return null;
+
+    return { jy, jm, jd, hh, mm, ss };
+  }
+
   function fmtDate(v){
     if(!v) return "—";
+
+    // Backend returns Jalali like "1404/10/08 14:33:20".
+    // If we feed that into Date(), it will be treated as Gregorian year 1404 and show wrong Jalali (year ~783).
+    const s = String(v).trim();
+    const jal = parseJalaliDateTime(s);
+
+    if(jal){
+      const day = toFaDigits(String(jal.jd));
+      const monthName = faMonths[jal.jm - 1] || nf.format(jal.jm);
+      const year = toFaDigits(String(jal.jy));
+
+      let out = `${day} ${monthName} ${year}`;
+      if(jal.hh !== null && jal.mm !== null){
+        const hh = String(jal.hh).padStart(2,"0");
+        const mm = String(jal.mm).padStart(2,"0");
+        out += ` — ${toFaDigits(`${hh}:${mm}`)}`;
+      }
+      return out;
+    }
+
+    // Fallback: ISO/Gregorian timestamps
     try{
       const d = new Date(v);
       if(Number.isNaN(d.getTime())) return "—";
@@ -298,6 +356,7 @@
       return "—";
     }
   }
+
 
   function renderTable(){
     if(!els.reactionsTbody) return;
