@@ -542,7 +542,7 @@ function safeDateLabel(iso){
       add("تگ", t?.name || f.tag);
     }
     if(f.visibility !== "all") add("نمایش", visibilityLabel(f.visibility));
-    if(f.is_hot !== "all") add("هات", f.is_hot === "true" ? "بله" : "خیر");
+    if(f.is_hot !== "all") add("اخبار داغ", f.is_hot === "true" ? "بله" : "خیر");
     if(f.published_after) add("از", f.published_after);
     if(f.published_before) add("تا", f.published_before);
 
@@ -627,7 +627,7 @@ function safeDateLabel(iso){
 
     if(!pageItems.length){
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td colspan="7" class="emptyCell">پستی برای نمایش وجود ندارد.</td>`;
+      tr.innerHTML = `<td colspan="8" class="emptyCell">پستی برای نمایش وجود ندارد.</td>`;
       els.postsTbody.appendChild(tr);
       return;
     }
@@ -643,7 +643,7 @@ function safeDateLabel(iso){
             <b title="${escapeHtml(p.title || "")}">${escapeHtml(p.title || "بدون عنوان")}</b>
             <div class="sub">
               <span class="mono">${escapeHtml(p.slug || "")}</span>
-              ${p.is_hot ? `<span class="hotDot" title="Hot">🔥</span>` : ``}
+              
               <span class="muted">${escapeHtml(p.category || "—")}</span>
             </div>
             <div class="tagRow">${tags}${moreTags}</div>
@@ -651,6 +651,9 @@ function safeDateLabel(iso){
         </td>
         <td><span class="badge ${statusClass(p.status)}">${escapeHtml(statusLabel(p.status))}</span></td>
         <td><span class="badge badge--muted">${escapeHtml(visibilityLabel(p.visibility))}</span></td>
+        <td class="hotCol">
+          ${p.is_hot ? `<span class="hotMark hotMark--yes" title="اخبار داغ" aria-label="اخبار داغ">✓</span>` : `<span class="hotMark hotMark--no" title="اخبار داغ نیست" aria-label="اخبار داغ نیست">✕</span>`}
+        </td>
         <td>
           ${escapeHtml(safeDateLabel(p.published_at))}
           ${p.status === "published" && p.author ? `<div class="muted">نویسنده: ${escapeHtml(p.author.display_name || p.author.full_name || p.author.username || p.author.email || "—")}</div>` : ``}
@@ -716,7 +719,7 @@ function safeDateLabel(iso){
     if(!loading) return;
     clearNode(els.postsTbody);
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="7" class="loadingCell">${escapeHtml(message)}</td>`;
+    tr.innerHTML = `<td colspan="8" class="loadingCell">${escapeHtml(message)}</td>`;
     els.postsTbody.appendChild(tr);
   }
 
@@ -1204,7 +1207,7 @@ function safeDateLabel(iso){
         console.error(err2);
         clearNode(els.postsTbody);
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td colspan="7" class="errorCell">${escapeHtml(err2.message || "خطا در دریافت پست‌ها")}</td>`;
+        tr.innerHTML = `<td colspan="8" class="errorCell">${escapeHtml(err2.message || "خطا در دریافت پست‌ها")}</td>`;
         els.postsTbody.appendChild(tr);
         toast("خطا در دریافت پست‌ها", "danger");
       }
