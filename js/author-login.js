@@ -28,6 +28,17 @@ const CONFIG = {
   REDIRECT_URL: "/author-panel/index.html",
 };
 
+function getSafeNextUrl(){
+  // Support redirect back to the originally requested panel page.
+  // Security: only allow same-site paths under /author-panel/
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const next = (params.get("next") || "").trim();
+    if(next && next.startsWith("/author-panel/")) return next;
+  }catch(_){ }
+  return CONFIG.REDIRECT_URL;
+}
+
 const form = document.getElementById("loginForm");
 const usernameEl = document.getElementById("username");
 const passwordEl = document.getElementById("password");
@@ -35,6 +46,17 @@ const errorBox = document.getElementById("errorBox");
 const submitBtn = document.getElementById("submitBtn");
 const spinner = submitBtn.querySelector(".btn__spinner");
 const togglePass = document.getElementById("togglePass");
+
+// If we were redirected here because the token expired, show a friendly message.
+(function(){
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const reason = params.get("reason");
+    if(reason === "expired"){
+      showError("جلسه شما منقضی شده. لطفاً دوباره وارد شوید.");
+    }
+  }catch(_){ }
+})();
 
 togglePass.addEventListener("click", () => {
   const isPass = passwordEl.type === "password";
@@ -170,13 +192,13 @@ async function loginAndAuthorize(username, password){
   }
   localStorage.setItem("atom_author_profile", JSON.stringify(authorProfile || {}));
 
-  window.location.href = CONFIG.REDIRECT_URL;
+  window.location.href = getSafeNextUrl();
 }
 
 function fakeLogin(){
   // فقط برای تست لوکال. در حالت عادی استفاده نمی‌شود.
   saveTokens({ access: "DEV_ACCESS_TOKEN", refresh: "DEV_REFRESH_TOKEN" });
-  window.location.href = CONFIG.REDIRECT_URL;
+  window.location.href = getSafeNextUrl();
 }
 
 form.addEventListener("submit", async (e) => {
